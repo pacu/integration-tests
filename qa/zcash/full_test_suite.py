@@ -90,9 +90,9 @@ def test_fortify_source(filename):
 def check_security_hardening():
     ret = True
 
-    # PIE, RELRO, Canary, and NX are tested by make check-security.
-    bin_programs = ['src/zebrad', 'src/zainod', 'src/zallet']  # Replace with actual values
-    bin_scripts = []   # Replace with actual values
+    # PIE, RELRO, Canary, and NX are tested by `contrib/devtools/security-check.py`.
+    bin_programs = ['src/zebrad', 'src/zainod', 'src/zallet']
+    bin_scripts = []
 
     print(f"Checking binary security of {bin_programs + bin_scripts}...")
 
@@ -115,7 +115,7 @@ def check_security_hardening():
         ret &= test_rpath_runpath(bin)
 
     # NOTE: checksec.sh does not reliably determine whether FORTIFY_SOURCE
-    # is enabled for the entire binary. See issue #915.
+    # is enabled for the entire binary. See https://github.com/zcash/zcash/issues/915 .
     # FORTIFY_SOURCE is not applicable to Rust binaries.
     for bin in CXX_BINARIES:
         ret &= test_fortify_source(bin)
