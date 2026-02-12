@@ -29,6 +29,7 @@ on:
       - '**.md'
       - 'COPYING'
   repository_dispatch:
+    types: [zallet-interop-request]
 
 permissions:
   contents: read
@@ -220,12 +221,15 @@ jobs:
 
     steps:
       - name: Create zcash/wallet status
-        if: always() && github.event.action == 'zallet-interop-request'
+        if: github.event.action == 'zallet-interop-request'
+        env:
+          GH_TOKEN: ${{ secrets.ZALLET_STATUS_ACCESS_TOKEN }}
         run: |
-          curl -X POST https://api.github.com/repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
-          -H 'Accept: application/vnd.github.everest-preview+json' \
-          -H 'Authorization: token ${{ secrets.ZALLET_STATUS_ACCESS_TOKEN }}' \
-          --data '{"state": "pending", "target_url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}", "description": "In progress", "context": "Integration tests / Build zebrad on tier ${{ matrix.tier }} platform ${{ matrix.platform }}"}'
+          gh api repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
+            -f state=pending \
+            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            -f description="In progress" \
+            -f context="Integration tests / Build zebrad on tier ${{ matrix.tier }} platform ${{ matrix.platform }}"
 
       - name: Use ZcashFoundation/zebra current main
         run: echo "ZEBRA_REF=refs/heads/main" >> $GITHUB_ENV
@@ -284,11 +288,19 @@ jobs:
 
       - name: Update zcash/wallet status with result
         if: always() && github.event.action == 'zallet-interop-request'
+        env:
+          GH_TOKEN: ${{ secrets.ZALLET_STATUS_ACCESS_TOKEN }}
         run: |
-          curl -X POST https://api.github.com/repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
-          -H 'Accept: application/vnd.github.everest-preview+json' \
-          -H 'Authorization: token ${{ secrets.ZALLET_STATUS_ACCESS_TOKEN }}' \
-          --data '{"state": "${{ job.status }}", "target_url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}", "description": "Finished", "context": "Integration tests / Build zebrad on tier ${{ matrix.tier }} platform ${{ matrix.platform }}"}'
+          if [ "${{ job.status }}" = "cancelled" ]; then
+            STATE="error"
+          else
+            STATE="${{ job.status }}"
+          fi
+          gh api repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
+            -f state="$STATE" \
+            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            -f description="Finished" \
+            -f context="Integration tests / Build zebrad on tier ${{ matrix.tier }} platform ${{ matrix.platform }}"
 
   build-zaino:
     name: Build zainod on tier ${{ matrix.tier }} platform ${{ matrix.platform }}
@@ -306,12 +318,15 @@ jobs:
 
     steps:
       - name: Create zcash/wallet status
-        if: always() && github.event.action == 'zallet-interop-request'
+        if: github.event.action == 'zallet-interop-request'
+        env:
+          GH_TOKEN: ${{ secrets.ZALLET_STATUS_ACCESS_TOKEN }}
         run: |
-          curl -X POST https://api.github.com/repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
-          -H 'Accept: application/vnd.github.everest-preview+json' \
-          -H 'Authorization: token ${{ secrets.ZALLET_STATUS_ACCESS_TOKEN }}' \
-          --data '{"state": "pending", "target_url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}", "description": "In progress", "context": "Integration tests / Build zainod on tier ${{ matrix.tier }} platform ${{ matrix.platform }}"}'
+          gh api repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
+            -f state=pending \
+            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            -f description="In progress" \
+            -f context="Integration tests / Build zainod on tier ${{ matrix.tier }} platform ${{ matrix.platform }}"
 
       - name: Use zingolabs/zaino current main
         run: echo "ZAINO_REF=refs/heads/dev" >> $GITHUB_ENV
@@ -370,11 +385,19 @@ jobs:
 
       - name: Update zcash/wallet status with result
         if: always() && github.event.action == 'zallet-interop-request'
+        env:
+          GH_TOKEN: ${{ secrets.ZALLET_STATUS_ACCESS_TOKEN }}
         run: |
-          curl -X POST https://api.github.com/repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
-          -H 'Accept: application/vnd.github.everest-preview+json' \
-          -H 'Authorization: token ${{ secrets.ZALLET_STATUS_ACCESS_TOKEN }}' \
-          --data '{"state": "${{ job.status }}", "target_url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}", "description": "Finished", "context": "Integration tests / Build zainod on tier ${{ matrix.tier }} platform ${{ matrix.platform }}"}'
+          if [ "${{ job.status }}" = "cancelled" ]; then
+            STATE="error"
+          else
+            STATE="${{ job.status }}"
+          fi
+          gh api repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
+            -f state="$STATE" \
+            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            -f description="Finished" \
+            -f context="Integration tests / Build zainod on tier ${{ matrix.tier }} platform ${{ matrix.platform }}"
 
   build-zallet:
     name: Build zallet on tier ${{ matrix.tier }} platform ${{ matrix.platform }}
@@ -392,12 +415,15 @@ jobs:
 
     steps:
       - name: Create zcash/wallet status
-        if: always() && github.event.action == 'zallet-interop-request'
+        if: github.event.action == 'zallet-interop-request'
+        env:
+          GH_TOKEN: ${{ secrets.ZALLET_STATUS_ACCESS_TOKEN }}
         run: |
-          curl -X POST https://api.github.com/repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
-          -H 'Accept: application/vnd.github.everest-preview+json' \
-          -H 'Authorization: token ${{ secrets.ZALLET_STATUS_ACCESS_TOKEN }}' \
-          --data '{"state": "pending", "target_url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}", "description": "In progress", "context": "Integration tests / Build zallet on tier ${{ matrix.tier }} platform ${{ matrix.platform }}"}'
+          gh api repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
+            -f state=pending \
+            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            -f description="In progress" \
+            -f context="Integration tests / Build zallet on tier ${{ matrix.tier }} platform ${{ matrix.platform }}"
 
       - name: Use specified zcash/wallet commit
         if: github.event.action == 'zallet-interop-request'
@@ -460,11 +486,19 @@ jobs:
 
       - name: Update zcash/wallet status with result
         if: always() && github.event.action == 'zallet-interop-request'
+        env:
+          GH_TOKEN: ${{ secrets.ZALLET_STATUS_ACCESS_TOKEN }}
         run: |
-          curl -X POST https://api.github.com/repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
-          -H 'Accept: application/vnd.github.everest-preview+json' \
-          -H 'Authorization: token ${{ secrets.ZALLET_STATUS_ACCESS_TOKEN }}' \
-          --data '{"state": "${{ job.status }}", "target_url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}", "description": "Finished", "context": "Integration tests / Build zallet on tier ${{ matrix.tier }} platform ${{ matrix.platform }}"}'
+          if [ "${{ job.status }}" = "cancelled" ]; then
+            STATE="error"
+          else
+            STATE="${{ job.status }}"
+          fi
+          gh api repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
+            -f state="$STATE" \
+            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            -f description="Finished" \
+            -f context="Integration tests / Build zallet on tier ${{ matrix.tier }} platform ${{ matrix.platform }}"
 
   # Not working in Windows
   sec-hard:
@@ -487,12 +521,15 @@ jobs:
 
     steps:
       - name: Create zcash/wallet status
-        if: always() && github.event.action == 'zallet-interop-request'
+        if: github.event.action == 'zallet-interop-request'
+        env:
+          GH_TOKEN: ${{ secrets.ZALLET_STATUS_ACCESS_TOKEN }}
         run: |
-          curl -X POST https://api.github.com/repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
-          -H 'Accept: application/vnd.github.everest-preview+json' \
-          -H 'Authorization: token ${{ secrets.ZALLET_STATUS_ACCESS_TOKEN }}' \
-          --data '{"state": "pending", "target_url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}", "description": "In progress", "context": "Integration tests / sec-hard tier ${{ matrix.tier }} platform ${{ matrix.platform }}"}'
+          gh api repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
+            -f state=pending \
+            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            -f description="In progress" \
+            -f context="Integration tests / sec-hard tier ${{ matrix.tier }} platform ${{ matrix.platform }}"
 
       - uses: actions/checkout@v4
 
@@ -529,11 +566,19 @@ jobs:
 
       - name: Update zcash/wallet status with result
         if: always() && github.event.action == 'zallet-interop-request'
+        env:
+          GH_TOKEN: ${{ secrets.ZALLET_STATUS_ACCESS_TOKEN }}
         run: |
-          curl -X POST https://api.github.com/repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
-          -H 'Accept: application/vnd.github.everest-preview+json' \
-          -H 'Authorization: token ${{ secrets.ZALLET_STATUS_ACCESS_TOKEN }}' \
-          --data '{"state": "${{ job.status }}", "target_url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}", "description": "Finished", "context": "Integration tests / sec-hard tier ${{ matrix.tier }} platform ${{ matrix.platform }}"}'
+          if [ "${{ job.status }}" = "cancelled" ]; then
+            STATE="error"
+          else
+            STATE="${{ job.status }}"
+          fi
+          gh api repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
+            -f state="$STATE" \
+            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            -f description="Finished" \
+            -f context="Integration tests / sec-hard tier ${{ matrix.tier }} platform ${{ matrix.platform }}"
 
   rpc-depends:
     name: RPC set up tier ${{ matrix.tier }} platform ${{ matrix.platform }}
@@ -588,12 +633,15 @@ jobs:
 
     steps:
       - name: Create zcash/wallet status
-        if: always() && github.event.action == 'zallet-interop-request'
+        if: github.event.action == 'zallet-interop-request'
+        env:
+          GH_TOKEN: ${{ secrets.ZALLET_STATUS_ACCESS_TOKEN }}
         run: |
-          curl -X POST https://api.github.com/repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
-          -H 'Accept: application/vnd.github.everest-preview+json' \
-          -H 'Authorization: token ${{ secrets.ZALLET_STATUS_ACCESS_TOKEN }}' \
-          --data '{"state": "pending", "target_url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}", "description": "In progress", "context": "Integration tests / RPC tests tier ${{ matrix.tier }} platform ${{ matrix.platform }} ${{ matrix.shard }}"}'
+          gh api repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
+            -f state=pending \
+            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            -f description="In progress" \
+            -f context="Integration tests / RPC tests tier ${{ matrix.tier }} platform ${{ matrix.platform }} ${{ matrix.shard }}"
 
       - uses: actions/checkout@v4
 
@@ -694,8 +742,16 @@ jobs:
 
       - name: Update zcash/wallet status with result
         if: always() && github.event.action == 'zallet-interop-request'
+        env:
+          GH_TOKEN: ${{ secrets.ZALLET_STATUS_ACCESS_TOKEN }}
         run: |
-          curl -X POST https://api.github.com/repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
-          -H 'Accept: application/vnd.github.everest-preview+json' \
-          -H 'Authorization: token ${{ secrets.ZALLET_STATUS_ACCESS_TOKEN }}' \
-          --data '{"state": "${{ job.status }}", "target_url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}", "description": "Finished", "context": "Integration tests / RPC tests tier ${{ matrix.tier }} platform ${{ matrix.platform }} ${{ matrix.shard }}"}'
+          if [ "${{ job.status }}" = "cancelled" ]; then
+            STATE="error"
+          else
+            STATE="${{ job.status }}"
+          fi
+          gh api repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
+            -f state="$STATE" \
+            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            -f description="Finished" \
+            -f context="Integration tests / RPC tests tier ${{ matrix.tier }} platform ${{ matrix.platform }} ${{ matrix.shard }}"
