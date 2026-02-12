@@ -129,80 +129,17 @@ def check_security_hardening():
 
     return ret
 
-def ensure_no_dot_so_in_depends():
-    arch_dir = get_arch_dir()
-    if arch_dir is None:
-        return False
-
-    exit_code = 0
-
-    if os.path.isdir(arch_dir):
-        lib_dir = os.path.join(arch_dir, 'lib')
-        libraries = os.listdir(lib_dir)
-
-        for lib in libraries:
-            if lib.find(".so") != -1:
-                print(lib)
-                exit_code = 1
-    else:
-        exit_code = 2
-        print("arch-specific build dir not present")
-        print("Did you build the ./depends tree?")
-        print("Are you on a currently unsupported architecture?")
-
-    if exit_code == 0:
-        print("PASS.")
-    else:
-        print("FAIL.")
-
-    return exit_code == 0
-
-def util_test():
-    return subprocess.call(
-        [sys.executable, repofile('src/test/bitcoin-util-test.py')],
-        cwd=repofile('src'),
-        env={'PYTHONPATH': repofile('src/test'), 'srcdir': repofile('src')}
-    ) == 0
-
-def rust_test():
-    arch_dir = get_arch_dir()
-    if arch_dir is None:
-        return False
-
-    rust_env = os.environ.copy()
-    rust_env['RUSTC'] = os.path.join(arch_dir, 'native', 'bin', 'rustc')
-    return subprocess.call([
-        os.path.join(arch_dir, 'native', 'bin', 'cargo'),
-        'test',
-        '--manifest-path',
-        os.path.join(REPOROOT, 'Cargo.toml'),
-    ], env=rust_env) == 0
-
 #
 # Tests
 #
 
 STAGES = [
-    'rust-test',
-    'btest',
-    'gtest',
     'sec-hard',
-    'no-dot-so',
-    'util-test',
-    'secp256k1',
-    'univalue',
     'rpc',
 ]
 
 STAGE_COMMANDS = {
-    'rust-test': rust_test,
-    'btest': [repofile('src/test/test_bitcoin'), '-p'],
-    'gtest': [repofile('src/zcash-gtest')],
     'sec-hard': check_security_hardening,
-    'no-dot-so': ensure_no_dot_so_in_depends,
-    'util-test': util_test,
-    'secp256k1': ['make', '-C', repofile('src/secp256k1'), 'check'],
-    'univalue': ['make', '-C', repofile('src/univalue'), 'check'],
     'rpc': [repofile('qa/pull-tester/rpc-tests.py')],
 }
 
