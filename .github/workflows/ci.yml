@@ -220,10 +220,20 @@ jobs:
         include: ${{ fromJson(needs.setup.outputs.build_matrix) }}
 
     steps:
+      - name: Generate app token
+        if: github.event.action == 'zallet-interop-request'
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.ZALLET_APP_ID }}
+          private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
+          owner: zcash
+          repositories: wallet
+
       - name: Create zcash/wallet status
         if: github.event.action == 'zallet-interop-request'
         env:
-          GH_TOKEN: ${{ secrets.ZALLET_STATUS_ACCESS_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh api repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
             -f state=pending \
@@ -289,7 +299,7 @@ jobs:
       - name: Update zcash/wallet status with result
         if: always() && github.event.action == 'zallet-interop-request'
         env:
-          GH_TOKEN: ${{ secrets.ZALLET_STATUS_ACCESS_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           if [ "${{ job.status }}" = "cancelled" ]; then
             STATE="error"
@@ -317,10 +327,20 @@ jobs:
         include: ${{ fromJson(needs.setup.outputs.build_matrix) }}
 
     steps:
+      - name: Generate app token
+        if: github.event.action == 'zallet-interop-request'
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.ZALLET_APP_ID }}
+          private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
+          owner: zcash
+          repositories: wallet
+
       - name: Create zcash/wallet status
         if: github.event.action == 'zallet-interop-request'
         env:
-          GH_TOKEN: ${{ secrets.ZALLET_STATUS_ACCESS_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh api repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
             -f state=pending \
@@ -386,7 +406,7 @@ jobs:
       - name: Update zcash/wallet status with result
         if: always() && github.event.action == 'zallet-interop-request'
         env:
-          GH_TOKEN: ${{ secrets.ZALLET_STATUS_ACCESS_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           if [ "${{ job.status }}" = "cancelled" ]; then
             STATE="error"
@@ -414,10 +434,20 @@ jobs:
         include: ${{ fromJson(needs.setup.outputs.build_matrix) }}
 
     steps:
+      - name: Generate app token
+        if: github.event.action == 'zallet-interop-request'
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.ZALLET_APP_ID }}
+          private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
+          owner: zcash
+          repositories: wallet
+
       - name: Create zcash/wallet status
         if: github.event.action == 'zallet-interop-request'
         env:
-          GH_TOKEN: ${{ secrets.ZALLET_STATUS_ACCESS_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh api repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
             -f state=pending \
@@ -487,7 +517,7 @@ jobs:
       - name: Update zcash/wallet status with result
         if: always() && github.event.action == 'zallet-interop-request'
         env:
-          GH_TOKEN: ${{ secrets.ZALLET_STATUS_ACCESS_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           if [ "${{ job.status }}" = "cancelled" ]; then
             STATE="error"
@@ -520,10 +550,20 @@ jobs:
         include: ${{ fromJson(needs.setup.outputs.unix_test_matrix) }}
 
     steps:
+      - name: Generate app token
+        if: github.event.action == 'zallet-interop-request'
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.ZALLET_APP_ID }}
+          private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
+          owner: zcash
+          repositories: wallet
+
       - name: Create zcash/wallet status
         if: github.event.action == 'zallet-interop-request'
         env:
-          GH_TOKEN: ${{ secrets.ZALLET_STATUS_ACCESS_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh api repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
             -f state=pending \
@@ -567,7 +607,7 @@ jobs:
       - name: Update zcash/wallet status with result
         if: always() && github.event.action == 'zallet-interop-request'
         env:
-          GH_TOKEN: ${{ secrets.ZALLET_STATUS_ACCESS_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           if [ "${{ job.status }}" = "cancelled" ]; then
             STATE="error"
@@ -632,10 +672,20 @@ jobs:
         include: ${{ fromJson(needs.setup.outputs.rpc_test_shards_matrix) }}
 
     steps:
+      - name: Generate app token
+        if: github.event.action == 'zallet-interop-request'
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.ZALLET_APP_ID }}
+          private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
+          owner: zcash
+          repositories: wallet
+
       - name: Create zcash/wallet status
         if: github.event.action == 'zallet-interop-request'
         env:
-          GH_TOKEN: ${{ secrets.ZALLET_STATUS_ACCESS_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh api repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
             -f state=pending \
@@ -743,7 +793,7 @@ jobs:
       - name: Update zcash/wallet status with result
         if: always() && github.event.action == 'zallet-interop-request'
         env:
-          GH_TOKEN: ${{ secrets.ZALLET_STATUS_ACCESS_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           if [ "${{ job.status }}" = "cancelled" ]; then
             STATE="error"
