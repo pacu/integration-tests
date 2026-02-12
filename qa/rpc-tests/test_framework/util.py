@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2014-2016 The Bitcoin Core developers
-# Copyright (c) 2016-2022 The Zcash developers
+# Copyright (c) 2016-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -30,8 +30,6 @@ from . import coverage
 from .authproxy import AuthServiceProxy, JSONRPCException
 
 ZCASHD_BINARY = os.path.join('src', 'zcashd')
-
-LEGACY_DEFAULT_FEE = Decimal('0.00001')
 
 COVERAGE_DIR = None
 PRE_BLOSSOM_BLOCK_TARGET_SPACING = 150
@@ -262,6 +260,7 @@ def initialize_chain(test_dir, num_nodes, cachedir, cache_behavior='current'):
             datadir = initialize_datadir(cachedir, i)
             args = [ zcashd_binary(), "-keypool=1", "-datadir="+datadir, "-discover=0" ]
             args.extend([
+                '-i-am-aware-zcashd-will-be-replaced-by-zebrad-and-zallet-in-2025',
                 '-nuparams=5ba81b19:1', # Overwinter
                 '-nuparams=76b809bb:1', # Sapling
                 '-mocktime=%d' % block_time
@@ -484,6 +483,7 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
         binary = zcashd_binary()
     args = [ binary, "-datadir="+datadir, "-keypool=1", "-discover=0", "-rest" ]
     args.extend([
+        '-i-am-aware-zcashd-will-be-replaced-by-zebrad-and-zallet-in-2025',
         '-nuparams=5ba81b19:1', # Overwinter
         '-nuparams=76b809bb:1', # Sapling
     ])
