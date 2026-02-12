@@ -53,14 +53,9 @@ RE_FORTIFY_AVAILABLE = re.compile('FORTIFY_SOURCE support available.*Yes')
 RE_FORTIFY_USED = re.compile('Binary compiled with FORTIFY_SOURCE support.*Yes')
 
 CXX_BINARIES = [
-    'src/zcashd',
-    'src/zcash-cli',
-    'src/zcash-gtest',
-    'src/zcash-tx',
-    'src/test/test_bitcoin',
 ]
 RUST_BINARIES = [
-    'src/zcashd-wallet-tool',
+    'src/zebrad',
 ]
 
 def test_rpath_runpath(filename):
@@ -94,26 +89,22 @@ def check_security_hardening():
     ret = True
 
     # PIE, RELRO, Canary, and NX are tested by make check-security.
-    if os.path.exists(repofile('src/Makefile')):
-        ret &= subprocess.call(['make', '-C', repofile('src'), 'check-security']) == 0
-    else:
-        # Equivalent to make check-security (this is just for CI purpose)
-        bin_programs = ['src/zcashd', 'src/zcash-cli', 'src/zcash-tx', 'src/bench/bench_bitcoin']  # Replace with actual values
-        bin_scripts = ['src/zcashd-wallet-tool']   # Replace with actual values
+    bin_programs = ['src/zebrad']  # Replace with actual values
+    bin_scripts = []   # Replace with actual values
 
-        print(f"Checking binary security of {bin_programs + bin_scripts}...")
+    print(f"Checking binary security of {bin_programs + bin_scripts}...")
 
-        for program in bin_programs:
-            command = [repofile('contrib/devtools/security-check.py'), repofile(program)]
-            ret &= subprocess.call(command) == 0
+    for program in bin_programs:
+        command = [repofile('contrib/devtools/security-check.py'), repofile(program)]
+        ret &= subprocess.call(command) == 0
 
-        for script in bin_scripts:
-            command = [repofile('contrib/devtools/security-check.py'), '--allow-no-canary', repofile(script)]
-            ret &= subprocess.call(command) == 0
+    for script in bin_scripts:
+        command = [repofile('contrib/devtools/security-check.py'), '--allow-no-canary', repofile(script)]
+        ret &= subprocess.call(command) == 0
 
     # The remaining checks are only for ELF binaries
-    # Assume that if zcashd is an ELF binary, they all are
-    with open(repofile('src/zcashd'), 'rb') as f:
+    # Assume that if zebrad is an ELF binary, they all are
+    with open(repofile('src/zebrad'), 'rb') as f:
         magic = f.read(4)
         if not magic.startswith(b'\x7fELF'):
             return ret
