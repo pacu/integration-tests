@@ -247,6 +247,8 @@ jobs:
           restore-keys: |
             ${{ matrix.name }}-ccache-
 
+      - uses: Swatinem/rust-cache@v2
+
       - name: Build zebrad
         run: cargo build --release --bin zebrad
 
@@ -308,6 +310,8 @@ jobs:
           restore-keys: |
             ${{ matrix.name }}-ccache-
 
+      - uses: Swatinem/rust-cache@v2
+
       - name: Build zainod
         run: cargo build --release --bin zainod
 
@@ -368,6 +372,8 @@ jobs:
           key: ${{ matrix.name }}-ccache-${{ steps.ccache_cache_timestamp.outputs.timestamp }}
           restore-keys: |
             ${{ matrix.name }}-ccache-
+
+      - uses: Swatinem/rust-cache@v2
 
       - name: Build zallet
         run: cargo build --release --bin zallet
