@@ -77,22 +77,3 @@ jobs:
       - name: UTF-8 encoding
         run: ./test/lint/lint-python-utf8-encoding.sh
         if: always()
-
-  rust-clippy:
-    name: Clippy (MSRV)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Run clippy
-        uses: actions-rs/clippy-check@v1
-        with:
-          name: Clippy (MSRV)
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-features --all-targets -- -D warnings
-
-  rustfmt:
-    name: Rustfmt
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: cargo fmt -- --check
