@@ -56,6 +56,7 @@ CXX_BINARIES = [
 ]
 RUST_BINARIES = [
     'src/zebrad',
+    'src/zallet',
 ]
 
 def test_rpath_runpath(filename):
@@ -89,7 +90,7 @@ def check_security_hardening():
     ret = True
 
     # PIE, RELRO, Canary, and NX are tested by make check-security.
-    bin_programs = ['src/zebrad']  # Replace with actual values
+    bin_programs = ['src/zebrad', 'src/zallet']  # Replace with actual values
     bin_scripts = []   # Replace with actual values
 
     print(f"Checking binary security of {bin_programs + bin_scripts}...")

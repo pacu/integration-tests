@@ -257,12 +257,74 @@ jobs:
           path: |
               ${{ format('./target/release/zebrad{0}', matrix.file_ext) }}
 
+  build-zallet:
+    name: Build zallet on tier ${{ matrix.tier }} platform ${{ matrix.platform }}
+    needs: setup
+    runs-on: ${{ matrix.build_os }}
+    container:
+      image: ${{ matrix.container }}
+      env:
+        HOME: /root
+        PATH: /root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
+    continue-on-error: ${{ matrix.tier == 3 }}
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.setup.outputs.build_matrix) }}
+
+    steps:
+      - name: Use zcash/wallet current main
+        run: echo "ZALLET_REF=refs/heads/main" >> $GITHUB_ENV
+
+      - name: Check out zcash/wallet
+        uses: actions/checkout@v4
+        with:
+          repository: zcash/wallet
+          ref: ${{ env.ZALLET_REF }}
+
+      - name: Install Homebrew build dependencies
+        if: matrix.brew_deps != ''
+        run: brew install ${{ matrix.brew_deps }}
+
+      - name: Install cross-compilation build dependencies
+        if: matrix.cross_deps != ''
+        run: sudo apt update && sudo apt install ${{ matrix.cross_deps }}
+
+      - name: Configure MinGW to use POSIX variant
+        if: matrix.name == 'mingw32'
+        run: |
+          sudo update-alternatives --set x86_64-w64-mingw32-gcc $(update-alternatives --query x86_64-w64-mingw32-gcc | grep Alternative | grep posix | cut -d' ' -f2)
+          sudo update-alternatives --set x86_64-w64-mingw32-g++ $(update-alternatives --query x86_64-w64-mingw32-g++ | grep Alternative | grep posix | cut -d' ' -f2)
+
+      - name: Prepare ccache timestamp
+        id: ccache_cache_timestamp
+        shell: bash
+        run: echo "timestamp=$(date +'%Y-%m-%d-%H;%M;%S')" >> "$GITHUB_OUTPUT"
+
+      - name: Cache ccache files
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.os == 'macOS' && '~/Library/Caches/ccache' || '~/.cache/ccache' }}
+          key: ${{ matrix.name }}-ccache-${{ steps.ccache_cache_timestamp.outputs.timestamp }}
+          restore-keys: |
+            ${{ matrix.name }}-ccache-
+
+      - name: Build zallet
+        run: cargo build --release --bin zallet
+
+      - name: Upload zallet
+        uses: actions/upload-artifact@v4
+        with:
+          name: zallet-${{ matrix.name }}
+          path: |
+              ${{ format('./target/release/zallet{0}', matrix.file_ext) }}
+
   # Not working in Windows
   sec-hard:
     name: sec-hard tier ${{ matrix.tier }} platform ${{ matrix.platform }}
     needs:
       - setup
       - build-zebra
+      - build-zallet
     runs-on: ${{ matrix.test_os }}
     container:
       image: ${{ matrix.container }}
@@ -283,10 +345,17 @@ jobs:
           name: zebrad-${{ matrix.name }}
           path: ./src
 
+      - name: Download zallet artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: zallet-${{ matrix.name }}
+          path: ./src
+
       - name: Make artifact executable
         if: runner.os != 'Windows'
         run: |
           chmod +x ${{ format('./src/zebrad{0}', matrix.file_ext) }}
+          chmod +x ${{ format('./src/zallet{0}', matrix.file_ext) }}
 
       - name: Run sec-hard test
         shell: bash
@@ -328,6 +397,7 @@ jobs:
     needs:
       - setup
       - build-zebra
+      - build-zallet
       - rpc-depends
     runs-on: ${{ matrix.test_os }}
     container:
@@ -365,10 +435,17 @@ jobs:
           name: zebrad-${{ matrix.name }}
           path: ./src
 
+      - name: Download zallet artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: zallet-${{ matrix.name }}
+          path: ./src
+
       - name: Make artifact executable
         if: runner.os != 'Windows'
         run: |
           chmod +x ${{ format('./src/zebrad{0}', matrix.file_ext) }}
+          chmod +x ${{ format('./src/zallet{0}', matrix.file_ext) }}
 
       - name: Get Sprout parameters
         uses: actions/cache@v4
