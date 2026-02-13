@@ -264,6 +264,7 @@ jobs:
       - name: Build zebrad
         env:
           HOST: ${{ matrix.host }}
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: "aarch64-linux-gnu-gcc"
         run: cargo build --release --target ${{ matrix.rust_target }} --bin zebrad
 
       - name: Upload zebrad
@@ -329,11 +330,12 @@ jobs:
           key: ${{ matrix.name }}
 
       - name: Install Rust target
-        env:
-          HOST: ${{ matrix.host }}
         run: rustup target add ${{ matrix.rust_target }}
 
       - name: Build zainod
+        env:
+          HOST: ${{ matrix.host }}
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: "aarch64-linux-gnu-gcc"
         run: cargo build --release --target ${{ matrix.rust_target }} --bin zainod
 
       - name: Upload zainod
@@ -404,6 +406,7 @@ jobs:
       - name: Build zallet
         env:
           HOST: ${{ matrix.host }}
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: "aarch64-linux-gnu-gcc"
         run: cargo build --release --target ${{ matrix.rust_target }} --bin zallet
 
       - name: Upload zallet
