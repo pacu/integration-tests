@@ -234,11 +234,11 @@ jobs:
         if: github.event.action == 'zallet-interop-request'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: |
-          gh api repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
-            -f state=pending \
-            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
-            -f description="In progress" \
+        run: >
+          gh api "repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }}"
+            -f state=pending
+            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            -f description="In progress"
             -f context="Integration tests / Build zebrad on tier ${{ matrix.tier }} platform ${{ matrix.platform }}"
 
       - name: Use ZcashFoundation/zebra current main
@@ -300,16 +300,11 @@ jobs:
         if: always() && github.event.action == 'zallet-interop-request'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: |
-          if [ "${{ job.status }}" = "cancelled" ]; then
-            STATE="error"
-          else
-            STATE="${{ job.status }}"
-          fi
-          gh api repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
-            -f state="$STATE" \
-            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
-            -f description="Finished" \
+        run: >
+          gh api "repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }}"
+            -f state="${{ case(job.status == 'cancelled', 'error', job.status) }}"
+            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            -f description="Finished"
             -f context="Integration tests / Build zebrad on tier ${{ matrix.tier }} platform ${{ matrix.platform }}"
 
   build-zaino:
@@ -341,11 +336,11 @@ jobs:
         if: github.event.action == 'zallet-interop-request'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: |
-          gh api repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
-            -f state=pending \
-            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
-            -f description="In progress" \
+        run: >
+          gh api "repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }}"
+            -f state=pending
+            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            -f description="In progress"
             -f context="Integration tests / Build zainod on tier ${{ matrix.tier }} platform ${{ matrix.platform }}"
 
       - name: Use zingolabs/zaino current main
@@ -407,16 +402,11 @@ jobs:
         if: always() && github.event.action == 'zallet-interop-request'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: |
-          if [ "${{ job.status }}" = "cancelled" ]; then
-            STATE="error"
-          else
-            STATE="${{ job.status }}"
-          fi
-          gh api repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
-            -f state="$STATE" \
-            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
-            -f description="Finished" \
+        run: >
+          gh api "repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }}"
+            -f state="${{ case(job.status == 'cancelled', 'error', job.status) }}"
+            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            -f description="Finished"
             -f context="Integration tests / Build zainod on tier ${{ matrix.tier }} platform ${{ matrix.platform }}"
 
   build-zallet:
@@ -448,11 +438,11 @@ jobs:
         if: github.event.action == 'zallet-interop-request'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: |
-          gh api repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
-            -f state=pending \
-            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
-            -f description="In progress" \
+        run: >
+          gh api "repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }}"
+            -f state=pending
+            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            -f description="In progress"
             -f context="Integration tests / Build zallet on tier ${{ matrix.tier }} platform ${{ matrix.platform }}"
 
       - name: Use specified zcash/wallet commit
@@ -518,16 +508,11 @@ jobs:
         if: always() && github.event.action == 'zallet-interop-request'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: |
-          if [ "${{ job.status }}" = "cancelled" ]; then
-            STATE="error"
-          else
-            STATE="${{ job.status }}"
-          fi
-          gh api repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
-            -f state="$STATE" \
-            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
-            -f description="Finished" \
+        run: >
+          gh api "repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }}"
+            -f state="${{ case(job.status == 'cancelled', 'error', job.status) }}"
+            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            -f description="Finished"
             -f context="Integration tests / Build zallet on tier ${{ matrix.tier }} platform ${{ matrix.platform }}"
 
   # Not working in Windows
@@ -564,11 +549,11 @@ jobs:
         if: github.event.action == 'zallet-interop-request'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: |
-          gh api repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
-            -f state=pending \
-            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
-            -f description="In progress" \
+        run: >
+          gh api "repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }}"
+            -f state=pending
+            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            -f description="In progress"
             -f context="Integration tests / sec-hard tier ${{ matrix.tier }} platform ${{ matrix.platform }}"
 
       - uses: actions/checkout@v4
@@ -608,16 +593,11 @@ jobs:
         if: always() && github.event.action == 'zallet-interop-request'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: |
-          if [ "${{ job.status }}" = "cancelled" ]; then
-            STATE="error"
-          else
-            STATE="${{ job.status }}"
-          fi
-          gh api repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
-            -f state="$STATE" \
-            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
-            -f description="Finished" \
+        run: >
+          gh api "repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }}"
+            -f state="${{ case(job.status == 'cancelled', 'error', job.status) }}"
+            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            -f description="Finished"
             -f context="Integration tests / sec-hard tier ${{ matrix.tier }} platform ${{ matrix.platform }}"
 
   rpc-depends:
@@ -686,11 +666,11 @@ jobs:
         if: github.event.action == 'zallet-interop-request'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: |
-          gh api repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
-            -f state=pending \
-            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
-            -f description="In progress" \
+        run: >
+          gh api "repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }}"
+            -f state=pending
+            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            -f description="In progress"
             -f context="Integration tests / RPC tests tier ${{ matrix.tier }} platform ${{ matrix.platform }} ${{ matrix.shard }}"
 
       - uses: actions/checkout@v4
@@ -794,14 +774,9 @@ jobs:
         if: always() && github.event.action == 'zallet-interop-request'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: |
-          if [ "${{ job.status }}" = "cancelled" ]; then
-            STATE="error"
-          else
-            STATE="${{ job.status }}"
-          fi
-          gh api repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }} \
-            -f state="$STATE" \
-            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
-            -f description="Finished" \
+        run: >
+          gh api "repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }}"
+            -f state="${{ case(job.status == 'cancelled', 'error', job.status) }}"
+            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            -f description="Finished"
             -f context="Integration tests / RPC tests tier ${{ matrix.tier }} platform ${{ matrix.platform }} ${{ matrix.shard }}"
