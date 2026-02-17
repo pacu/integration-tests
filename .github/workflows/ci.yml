@@ -123,7 +123,7 @@ jobs:
       rpc_test_shards_matrix: ${{ steps.set-rpc-tests.outputs.rpc_test_shards_matrix }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       # Configure the build and test matrices. Notes:
       # - The `*_names` lists of platforms are combined with job-specific lists to build
@@ -191,7 +191,7 @@ jobs:
           echo -e "$RPC_MATRIX_JSON\n$RPC_SHARDS_JSON" | jq -r -s 'add | @json "rpc_test_shards_matrix=\(.)"' >> $GITHUB_OUTPUT
 
       - name: Cache Sprout parameters
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: zcash-params
           key: zcash-params
@@ -223,7 +223,7 @@ jobs:
       - name: Generate app token
         if: github.event.action == 'zallet-interop-request'
         id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
         with:
           app-id: ${{ secrets.ZALLET_APP_ID }}
           private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
@@ -245,7 +245,7 @@ jobs:
         run: echo "ZEBRA_REF=refs/heads/main" >> $GITHUB_ENV
 
       - name: Check out ZcashFoundation/zebra
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           repository: ZcashFoundation/zebra
           ref: ${{ env.ZEBRA_REF }}
@@ -270,14 +270,14 @@ jobs:
         run: echo "timestamp=$(date +'%Y-%m-%d-%H;%M;%S')" >> "$GITHUB_OUTPUT"
 
       - name: Cache ccache files
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ${{ runner.os == 'macOS' && '~/Library/Caches/ccache' || '~/.cache/ccache' }}
           key: ${{ matrix.name }}-ccache-${{ steps.ccache_cache_timestamp.outputs.timestamp }}
           restore-keys: |
             ${{ matrix.name }}-ccache-
 
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
         with:
           key: ${{ matrix.name }}
 
@@ -291,7 +291,7 @@ jobs:
         run: cargo build --release --target ${{ matrix.rust_target }} --bin zebrad
 
       - name: Upload zebrad
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: zebrad-${{ matrix.name }}
           path: |
@@ -326,7 +326,7 @@ jobs:
       - name: Generate app token
         if: github.event.action == 'zallet-interop-request'
         id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
         with:
           app-id: ${{ secrets.ZALLET_APP_ID }}
           private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
@@ -348,7 +348,7 @@ jobs:
         run: echo "ZAINO_REF=refs/heads/dev" >> $GITHUB_ENV
 
       - name: Check out zingolabs/zaino
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           repository: zingolabs/zaino
           ref: ${{ env.ZAINO_REF }}
@@ -373,14 +373,14 @@ jobs:
         run: echo "timestamp=$(date +'%Y-%m-%d-%H;%M;%S')" >> "$GITHUB_OUTPUT"
 
       - name: Cache ccache files
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ${{ runner.os == 'macOS' && '~/Library/Caches/ccache' || '~/.cache/ccache' }}
           key: ${{ matrix.name }}-ccache-${{ steps.ccache_cache_timestamp.outputs.timestamp }}
           restore-keys: |
             ${{ matrix.name }}-ccache-
 
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
         with:
           key: ${{ matrix.name }}
 
@@ -394,7 +394,7 @@ jobs:
         run: cargo build --release --target ${{ matrix.rust_target }} --bin zainod
 
       - name: Upload zainod
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: zainod-${{ matrix.name }}
           path: |
@@ -429,7 +429,7 @@ jobs:
       - name: Generate app token
         if: github.event.action == 'zallet-interop-request'
         id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
         with:
           app-id: ${{ secrets.ZALLET_APP_ID }}
           private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
@@ -455,7 +455,7 @@ jobs:
         run: echo "ZALLET_REF=refs/heads/main" >> $GITHUB_ENV
 
       - name: Check out zcash/wallet
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           repository: zcash/wallet
           ref: ${{ env.ZALLET_REF }}
@@ -480,14 +480,14 @@ jobs:
         run: echo "timestamp=$(date +'%Y-%m-%d-%H;%M;%S')" >> "$GITHUB_OUTPUT"
 
       - name: Cache ccache files
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ${{ runner.os == 'macOS' && '~/Library/Caches/ccache' || '~/.cache/ccache' }}
           key: ${{ matrix.name }}-ccache-${{ steps.ccache_cache_timestamp.outputs.timestamp }}
           restore-keys: |
             ${{ matrix.name }}-ccache-
 
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
         with:
           key: ${{ matrix.name }}
 
@@ -501,7 +501,7 @@ jobs:
         run: cargo build --release --target ${{ matrix.rust_target }} --bin zallet
 
       - name: Upload zallet
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: zallet-${{ matrix.name }}
           path: |
@@ -541,7 +541,7 @@ jobs:
       - name: Generate app token
         if: github.event.action == 'zallet-interop-request'
         id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
         with:
           app-id: ${{ secrets.ZALLET_APP_ID }}
           private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
@@ -559,22 +559,22 @@ jobs:
             -f description="In progress"
             -f context="Integration tests / sec-hard tier ${{ matrix.tier }} platform ${{ matrix.platform }}"
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Download zebrad artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: zebrad-${{ matrix.name }}
           path: ./src
 
       - name: Download zainod artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: zainod-${{ matrix.name }}
           path: ./src
 
       - name: Download zallet artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: zallet-${{ matrix.name }}
           path: ./src
@@ -620,7 +620,7 @@ jobs:
 
     steps:
       - name: Cache Python dependencies for RPC tests
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           enableCrossOsArchive: true
           path: venv
@@ -658,7 +658,7 @@ jobs:
       - name: Generate app token
         if: github.event.action == 'zallet-interop-request'
         id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
         with:
           app-id: ${{ secrets.ZALLET_APP_ID }}
           private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
@@ -676,10 +676,10 @@ jobs:
             -f description="In progress"
             -f context="Integration tests / RPC tests tier ${{ matrix.tier }} platform ${{ matrix.platform }} ${{ matrix.shard }}"
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Cache Python dependencies for RPC tests
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           enableCrossOsArchive: true
           path: venv
@@ -692,19 +692,19 @@ jobs:
           pip install zmq asyncio base58
 
       - name: Download zebrad artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: zebrad-${{ matrix.name }}
           path: ./src
 
       - name: Download zainod artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: zainod-${{ matrix.name }}
           path: ./src
 
       - name: Download zallet artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: zallet-${{ matrix.name }}
           path: ./src
@@ -717,7 +717,7 @@ jobs:
           chmod +x ${{ format('./src/zallet{0}', matrix.file_ext) }}
 
       - name: Get Sprout parameters
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: zcash-params
           key: zcash-params
