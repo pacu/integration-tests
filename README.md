@@ -1,83 +1,51 @@
-Zcash 6.11.0
+Zcash Integration Tests
 <img align="right" width="120" height="80" src="doc/imgs/logo.png">
 ===========
 
-What is Zcash?
---------------
+This repository hosts integration tests and associated CI infrastructure for the
+Zcash ecosystem. The following tests are provided:
 
-[Zcash](https://z.cash/) is HTTPS for money.
+- Functional tests in Python of [`zebrad`], [`zainod`], and [`zallet`], using
+  regtest mode and primarily their JSON-RPC interfaces.
 
-Initially based on Bitcoin's design, Zcash has been developed from
-the Zerocash protocol to offer a far higher standard of privacy and
-anonymity. It uses a sophisticated zero-knowledge proving scheme to
-preserve confidentiality and hide the connections between shielded
-transactions. More technical details are available in our
-[Protocol Specification](https://zips.z.cash/protocol/protocol.pdf).
+The functional tests and CI workflows were originally part of the [`zcashd`]
+codebase, with the Python test framework (and some of the tests) inherited from
+[Bitcoin Core].
 
-## The `zcashd` Full Node
-
-This repository hosts the `zcashd` software, a Zcash consensus node
-implementation. It downloads and stores the entire history of Zcash
-transactions. Depending on the speed of your computer and network
-connection, the synchronization process could take several days.
-
-<p align="center">
-  <img src="doc/imgs/zcashd_screen.gif" height="500">
-</p>
-
-The `zcashd` code is derived from a source fork of
-[Bitcoin Core](https://github.com/bitcoin/bitcoin). The code was forked
-initially from Bitcoin Core v0.11.2, and the two codebases have diverged
-substantially.
-
-#### :lock: Security Warnings
-
-See important security warnings on the
-[Security Information page](https://z.cash/support/security/).
-
-**Zcash is experimental and a work in progress.** Use it at your own risk.
-
-####  :ledger: Deprecation Policy
-
-This release is considered deprecated 16 weeks after the release day. There
-is an automatic deprecation shutdown feature which will halt the node some
-time after this 16-week period. The automatic feature is based on block
-height.
-
-## Other Zcash Implementations
-
-The [Zebra](https://github.com/ZcashFoundation/zebra) project offers a
-different Zcash consensus node implementation, written largely from the
-ground up.
+[`zebrad`]: https://github.com/ZcashFoundation/zebra
+[`zainod`]: https://github.com/zingolabs/zaino
+[`zallet`]: https://github.com/zcash/wallet
+[`zcashd`]: https://github.com/zcash/zcash
+[Bitcoin Core]: https://github.com/bitcoin/bitcoin
 
 ## Getting Started
 
-Please see our [user
-guide](https://zcash.readthedocs.io/en/latest/rtd_pages/rtd_docs/user_guide.html)
-for instructions on joining the main Zcash network.
+### Running the tests locally
 
-### Need Help?
+- Clone the repository.
+- Build `zebrad`, `zainod`, and `zallet` binaries, and place them in a folder
+  `./src/` under the repository root.
+- `python3 -m venv venv`
+- `. venv/bin/activate`
+- `pip3 install asyncio base58 toml`
+- `./qa/zcash/full_test_suite.py`
 
-* :blue_book: See the documentation at the [ReadTheDocs](https://zcash.readthedocs.io)
-  for help and more information.
-* :incoming_envelope: Ask for help on the [Zcash forum](https://forum.zcashcommunity.com/).
-* :speech_balloon: Join our community on the [Zcash Global Discord](https://discord.com/invite/zcash).
-* 🧑‍🎓: Learn at [ZecHub](https://zechub.wiki/)
+See [the README for the functional tests][qa/README.md] for additional usage
+information.
+
+### Writing tests
+
+- For new tests:
+  - Add a new file `NEW_TEST.py` to the `qa/rpc-tests` folder.
+  - Update `qa/pull-tester/rpc-tests.py`, adding a new entry `'NEW_TEST.py',` to
+    the `BASE_SCRIPTS` array (either at the end of the array, or in the
+    appropriate position based on how long the test takes to run).
+- Write your test (either new from scratch, or making changes to an existing
+  test as appropriate).
+- Open a pull request with your changes.
 
 Participation in the Zcash project is subject to a
 [Code of Conduct](code_of_conduct.md).
-
-### Building
-
-Build Zcash along with most dependencies from source by running the following command:
-
-```
-./zcutil/build.sh -j$(nproc)
-```
-
-Currently, Zcash is only officially supported on Debian and Ubuntu. See the
-[Debian / Ubuntu build page](https://zcash.readthedocs.io/en/latest/rtd_pages/Debian-Ubuntu-build.html)
-for detailed instructions.
 
 License
 -------
