@@ -45,7 +45,7 @@ jobs:
             # - name: Debian-bookworm
             #   tier: 1
             #   platform: Debian Bookworm
-            #   build_os: ubuntu-22.04
+            #   build_os: ubuntu-22.04-8cores
             #   test_os: ubuntu-22.04
             #   container: electriccoinco/debian-helper:bookworm
             #   host: x86_64-pc-linux-gnu
@@ -54,7 +54,7 @@ jobs:
             # - name: Debian-bullseye
             #   tier: 1
             #   platform: Debian bullseye
-            #   build_os: ubuntu-22.04
+            #   build_os: ubuntu-22.04-8cores
             #   test_os: ubuntu-22.04
             #   container: electriccoinco/debian-helper:bullseye
             #   host: x86_64-pc-linux-gnu
@@ -63,7 +63,7 @@ jobs:
             - name: ubuntu-22.04
               tier: 1
               platform: Ubuntu 22.04
-              build_os: ubuntu-22.04
+              build_os: ubuntu-22.04-8cores
               test_os: ubuntu-22.04
               host: x86_64-pc-linux-gnu
               rust_target: x86_64-unknown-linux-gnu
@@ -93,7 +93,7 @@ jobs:
             - name: mingw32
               tier: 3
               platform: Windows (64-bit MinGW)
-              build_os: ubuntu-22.04
+              build_os: ubuntu-22.04-8cores
               test_os: windows-latest
               cross_deps: >
                 mingw-w64
@@ -104,7 +104,7 @@ jobs:
             - name: aarch64-linux
               tier: 3
               platform: ARM64 Linux
-              build_os: ubuntu-22.04
+              build_os: ubuntu-22.04-8cores
               cross_deps: >
                 g++-aarch64-linux-gnu
               host: aarch64-linux-gnu
