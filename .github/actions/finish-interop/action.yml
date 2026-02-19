@@ -1,0 +1,25 @@
+name: 'Finish interop'
+description: 'Updates status with CI result'
+inputs:
+  zallet-app-token:
+    description: 'Access token for updating the Zallet pending status'
+    required: true
+  job-name:
+    description: 'Name of the job to report to the requesting repository'
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    - name: Update zcash/wallet status with result
+      if: always() && github.event.action == 'zallet-interop-request'
+      shell: sh
+      env:
+        GH_TOKEN: ${{ inputs.zallet-app-token }}
+        SHA: ${{ github.event.client_payload.sha }}
+        JOB_NAME: ${{ inputs.job-name }}
+      run: >
+        gh api "repos/zcash/wallet/statuses/${SHA}"
+        --field state="${{ case(job.status == 'cancelled', 'error', job.status) }}"
+        --field target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        --field description="Finished"
+        --field context="Integration tests / ${JOB_NAME}"
