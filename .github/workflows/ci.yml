@@ -220,26 +220,18 @@ jobs:
         include: ${{ fromJson(needs.setup.outputs.build_matrix) }}
 
     steps:
-      - name: Generate app token
-        if: github.event.action == 'zallet-interop-request'
-        id: app-token
-        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+      - name: Check out integration-tests to access actions
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          app-id: ${{ secrets.ZALLET_APP_ID }}
-          private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
-          owner: zcash
-          repositories: wallet
+          path: integration-tests
+          persist-credentials: false
 
-      - name: Create zcash/wallet status
-        if: github.event.action == 'zallet-interop-request'
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: >
-          gh api "repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }}"
-          --field state=pending
-          --field target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          --field description="In progress"
-          --field context="Integration tests / Build zebrad on tier ${{ matrix.tier }} platform ${{ matrix.platform }}"
+      - id: start-interop
+        uses: ./integration-tests/.github/actions/start-interop
+        with:
+          zallet-app-id: ${{ secrets.ZALLET_APP_ID }}
+          zallet-private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
+          job-name: 'Build zebrad on tier ${{ matrix.tier }} platform ${{ matrix.platform }}'
 
       - name: Use ZcashFoundation/zebra current main
         run: echo "ZEBRA_REF=refs/heads/main" >> $GITHUB_ENV
@@ -249,6 +241,7 @@ jobs:
         with:
           repository: ZcashFoundation/zebra
           ref: ${{ env.ZEBRA_REF }}
+          path: zebra
 
       - name: Install Homebrew build dependencies
         if: matrix.brew_deps != ''
@@ -280,33 +273,30 @@ jobs:
       - uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
         with:
           key: ${{ matrix.name }}
+          workspaces: "./zebra"
 
       - name: Install Rust target
         run: rustup target add ${{ matrix.rust_target }}
+        working-directory: ./zebra
 
       - name: Build zebrad
         env:
           HOST: ${{ matrix.host }}
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: "aarch64-linux-gnu-gcc"
         run: cargo build --release --target ${{ matrix.rust_target }} --bin zebrad
+        working-directory: ./zebra
 
       - name: Upload zebrad
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: zebrad-${{ matrix.name }}
           path: |
-              ${{ format('./target/{0}/release/zebrad{1}', matrix.rust_target, matrix.file_ext) }}
+              ${{ format('./zebra/target/{0}/release/zebrad{1}', matrix.rust_target, matrix.file_ext) }}
 
-      - name: Update zcash/wallet status with result
-        if: always() && github.event.action == 'zallet-interop-request'
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: >
-          gh api "repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }}"
-          --field state="${{ case(job.status == 'cancelled', 'error', job.status) }}"
-          --field target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          --field description="Finished"
-          --field context="Integration tests / Build zebrad on tier ${{ matrix.tier }} platform ${{ matrix.platform }}"
+      - uses: ./integration-tests/.github/actions/finish-interop
+        with:
+          zallet-app-token: ${{ steps.start-interop.outputs.zallet-app-token }}
+          job-name: 'Build zebrad on tier ${{ matrix.tier }} platform ${{ matrix.platform }}'
 
   build-zaino:
     name: Build zainod on tier ${{ matrix.tier }} platform ${{ matrix.platform }}
@@ -323,26 +313,18 @@ jobs:
         include: ${{ fromJson(needs.setup.outputs.build_matrix) }}
 
     steps:
-      - name: Generate app token
-        if: github.event.action == 'zallet-interop-request'
-        id: app-token
-        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+      - name: Check out integration-tests to access actions
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          app-id: ${{ secrets.ZALLET_APP_ID }}
-          private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
-          owner: zcash
-          repositories: wallet
+          path: integration-tests
+          persist-credentials: false
 
-      - name: Create zcash/wallet status
-        if: github.event.action == 'zallet-interop-request'
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: >
-          gh api "repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }}"
-          --field state=pending
-          --field target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          --field description="In progress"
-          --field context="Integration tests / Build zainod on tier ${{ matrix.tier }} platform ${{ matrix.platform }}"
+      - id: start-interop
+        uses: ./integration-tests/.github/actions/start-interop
+        with:
+          zallet-app-id: ${{ secrets.ZALLET_APP_ID }}
+          zallet-private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
+          job-name: 'Build zainod on tier ${{ matrix.tier }} platform ${{ matrix.platform }}'
 
       - name: Use zingolabs/zaino current main
         run: echo "ZAINO_REF=refs/heads/dev" >> $GITHUB_ENV
@@ -352,6 +334,7 @@ jobs:
         with:
           repository: zingolabs/zaino
           ref: ${{ env.ZAINO_REF }}
+          path: zaino
 
       - name: Install Homebrew build dependencies
         if: matrix.brew_deps != ''
@@ -383,33 +366,30 @@ jobs:
       - uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
         with:
           key: ${{ matrix.name }}
+          workspaces: "./zaino"
 
       - name: Install Rust target
         run: rustup target add ${{ matrix.rust_target }}
+        working-directory: ./zaino
 
       - name: Build zainod
         env:
           HOST: ${{ matrix.host }}
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: "aarch64-linux-gnu-gcc"
         run: cargo build --release --target ${{ matrix.rust_target }} --bin zainod
+        working-directory: ./zaino
 
       - name: Upload zainod
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: zainod-${{ matrix.name }}
           path: |
-              ${{ format('./target/{0}/release/zainod{1}', matrix.rust_target, matrix.file_ext) }}
+              ${{ format('./zaino/target/{0}/release/zainod{1}', matrix.rust_target, matrix.file_ext) }}
 
-      - name: Update zcash/wallet status with result
-        if: always() && github.event.action == 'zallet-interop-request'
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: >
-          gh api "repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }}"
-          --field state="${{ case(job.status == 'cancelled', 'error', job.status) }}"
-          --field target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          --field description="Finished"
-          --field context="Integration tests / Build zainod on tier ${{ matrix.tier }} platform ${{ matrix.platform }}"
+      - uses: ./integration-tests/.github/actions/finish-interop
+        with:
+          zallet-app-token: ${{ steps.start-interop.outputs.zallet-app-token }}
+          job-name: 'Build zainod on tier ${{ matrix.tier }} platform ${{ matrix.platform }}'
 
   build-zallet:
     name: Build zallet on tier ${{ matrix.tier }} platform ${{ matrix.platform }}
@@ -426,26 +406,18 @@ jobs:
         include: ${{ fromJson(needs.setup.outputs.build_matrix) }}
 
     steps:
-      - name: Generate app token
-        if: github.event.action == 'zallet-interop-request'
-        id: app-token
-        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+      - name: Check out integration-tests to access actions
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          app-id: ${{ secrets.ZALLET_APP_ID }}
-          private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
-          owner: zcash
-          repositories: wallet
+          path: integration-tests
+          persist-credentials: false
 
-      - name: Create zcash/wallet status
-        if: github.event.action == 'zallet-interop-request'
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: >
-          gh api "repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }}"
-          --field state=pending
-          --field target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          --field description="In progress"
-          --field context="Integration tests / Build zallet on tier ${{ matrix.tier }} platform ${{ matrix.platform }}"
+      - id: start-interop
+        uses: ./integration-tests/.github/actions/start-interop
+        with:
+          zallet-app-id: ${{ secrets.ZALLET_APP_ID }}
+          zallet-private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
+          job-name: 'Build zallet on tier ${{ matrix.tier }} platform ${{ matrix.platform }}'
 
       - name: Use specified zcash/wallet commit
         if: github.event.action == 'zallet-interop-request'
@@ -459,6 +431,7 @@ jobs:
         with:
           repository: zcash/wallet
           ref: ${{ env.ZALLET_REF }}
+          path: zallet
 
       - name: Install Homebrew build dependencies
         if: matrix.brew_deps != ''
@@ -490,33 +463,30 @@ jobs:
       - uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
         with:
           key: ${{ matrix.name }}
+          workspaces: "./zallet"
 
       - name: Install Rust target
         run: rustup target add ${{ matrix.rust_target }}
+        working-directory: ./zallet
 
       - name: Build zallet
         env:
           HOST: ${{ matrix.host }}
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: "aarch64-linux-gnu-gcc"
         run: cargo build --release --target ${{ matrix.rust_target }} --bin zallet
+        working-directory: ./zallet
 
       - name: Upload zallet
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: zallet-${{ matrix.name }}
           path: |
-              ${{ format('./target/{0}/release/zallet{1}', matrix.rust_target, matrix.file_ext) }}
+              ${{ format('./zallet/target/{0}/release/zallet{1}', matrix.rust_target, matrix.file_ext) }}
 
-      - name: Update zcash/wallet status with result
-        if: always() && github.event.action == 'zallet-interop-request'
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: >
-          gh api "repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }}"
-          --field state="${{ case(job.status == 'cancelled', 'error', job.status) }}"
-          --field target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          --field description="Finished"
-          --field context="Integration tests / Build zallet on tier ${{ matrix.tier }} platform ${{ matrix.platform }}"
+      - uses: ./integration-tests/.github/actions/finish-interop
+        with:
+          zallet-app-token: ${{ steps.start-interop.outputs.zallet-app-token }}
+          job-name: 'Build zallet on tier ${{ matrix.tier }} platform ${{ matrix.platform }}'
 
   # Not working in Windows
   sec-hard:
@@ -538,28 +508,14 @@ jobs:
         include: ${{ fromJson(needs.setup.outputs.unix_test_matrix) }}
 
     steps:
-      - name: Generate app token
-        if: github.event.action == 'zallet-interop-request'
-        id: app-token
-        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
-        with:
-          app-id: ${{ secrets.ZALLET_APP_ID }}
-          private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
-          owner: zcash
-          repositories: wallet
-
-      - name: Create zcash/wallet status
-        if: github.event.action == 'zallet-interop-request'
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: >
-          gh api "repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }}"
-          --field state=pending
-          --field target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          --field description="In progress"
-          --field context="Integration tests / sec-hard tier ${{ matrix.tier }} platform ${{ matrix.platform }}"
-
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: start-interop
+        uses: ./.github/actions/start-interop
+        with:
+          zallet-app-id: ${{ secrets.ZALLET_APP_ID }}
+          zallet-private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
+          job-name: 'sec-hard tier ${{ matrix.tier }} platform ${{ matrix.platform }}'
 
       - name: Download zebrad artifact
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
@@ -592,16 +548,10 @@ jobs:
         env:
           HOST: ${{ matrix.host }}
 
-      - name: Update zcash/wallet status with result
-        if: always() && github.event.action == 'zallet-interop-request'
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: >
-          gh api "repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }}"
-          --field state="${{ case(job.status == 'cancelled', 'error', job.status) }}"
-          --field target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          --field description="Finished"
-          --field context="Integration tests / sec-hard tier ${{ matrix.tier }} platform ${{ matrix.platform }}"
+      - uses: ./.github/actions/finish-interop
+        with:
+          zallet-app-token: ${{ steps.start-interop.outputs.zallet-app-token }}
+          job-name: 'sec-hard tier ${{ matrix.tier }} platform ${{ matrix.platform }}'
 
   rpc-depends:
     name: RPC set up tier ${{ matrix.tier }} platform ${{ matrix.platform }}
@@ -655,30 +605,14 @@ jobs:
         include: ${{ fromJson(needs.setup.outputs.rpc_test_shards_matrix) }}
 
     steps:
-      - name: Generate app token
-        if: github.event.action == 'zallet-interop-request'
-        id: app-token
-        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
-        with:
-          app-id: ${{ secrets.ZALLET_APP_ID }}
-          private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
-          owner: zcash
-          repositories: wallet
-
-      - name: Create zcash/wallet status
-        if: github.event.action == 'zallet-interop-request'
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          SHARD: ${{ matrix.shard }}
-        shell: sh
-        run: >
-          gh api "repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }}"
-          --field state=pending
-          --field target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          --field description="In progress"
-          --field context="Integration tests / RPC tests tier ${{ matrix.tier }} platform ${{ matrix.platform }} ${SHARD}"
-
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: start-interop
+        uses: ./.github/actions/start-interop
+        with:
+          zallet-app-id: ${{ secrets.ZALLET_APP_ID }}
+          zallet-private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
+          job-name: 'RPC tests tier ${{ matrix.tier }} platform ${{ matrix.platform }} ${{ matrix.shard }}'
 
       - name: Cache Python dependencies for RPC tests
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
@@ -775,15 +709,7 @@ jobs:
           . ./venv/bin/activate
           ZCASHD=$(pwd)/${{ format('src/zebrad{0}', matrix.file_ext) }} SRC_DIR=$(pwd) python3 ./subclass.py
 
-      - name: Update zcash/wallet status with result
-        if: always() && github.event.action == 'zallet-interop-request'
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          SHARD: ${{ matrix.shard }}
-        shell: sh
-        run: >
-          gh api "repos/zcash/wallet/statuses/${{ github.event.client_payload.sha }}"
-          --field state="${{ case(job.status == 'cancelled', 'error', job.status) }}"
-          --field target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          --field description="Finished"
-          --field context="Integration tests / RPC tests tier ${{ matrix.tier }} platform ${{ matrix.platform }} ${SHARD}"
+      - uses: ./.github/actions/finish-interop
+        with:
+          zallet-app-token: ${{ steps.start-interop.outputs.zallet-app-token }}
+          job-name: 'RPC tests tier ${{ matrix.tier }} platform ${{ matrix.platform }} ${{ matrix.shard }}'

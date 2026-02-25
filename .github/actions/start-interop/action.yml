@@ -1,0 +1,42 @@
+name: 'Start interop'
+description: 'Generates interop token and creates pending status'
+inputs:
+  zallet-app-id:
+    description: 'Zallet GitHub App ID'
+    required: true
+  zallet-private-key:
+    description: 'Zallet GitHub App private key'
+    required: true
+  job-name:
+    description: 'Name of the job to report to the requesting repository'
+    required: true
+outputs:
+  zallet-app-token:
+    description: 'Access token for updating the Zallet pending status'
+    value: ${{ steps.zallet-app-token.outputs.token }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Generate zcash/wallet app token
+      if: github.event.action == 'zallet-interop-request'
+      id: zallet-app-token
+      uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+      with:
+        app-id: ${{ inputs.zallet-app-id }}
+        private-key: ${{ inputs.zallet-private-key }}
+        owner: zcash
+        repositories: wallet
+
+    - name: Create zcash/wallet status
+      if: github.event.action == 'zallet-interop-request'
+      shell: sh
+      env:
+        GH_TOKEN: ${{ steps.zallet-app-token.outputs.token }}
+        SHA: ${{ github.event.client_payload.sha }}
+        JOB_NAME: ${{ inputs.job-name }}
+      run: >
+        gh api "repos/zcash/wallet/statuses/${SHA}"
+        --field state=pending
+        --field target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        --field description="In progress"
+        --field context="Integration tests / ${JOB_NAME}"
