@@ -294,6 +294,7 @@ jobs:
               ${{ format('./zebra/target/{0}/release/zebrad{1}', matrix.rust_target, matrix.file_ext) }}
 
       - uses: ./integration-tests/.github/actions/finish-interop
+        if: always()
         with:
           zallet-app-token: ${{ steps.start-interop.outputs.zallet-app-token }}
           job-name: 'Build zebrad on tier ${{ matrix.tier }} platform ${{ matrix.platform }}'
@@ -387,6 +388,7 @@ jobs:
               ${{ format('./zaino/target/{0}/release/zainod{1}', matrix.rust_target, matrix.file_ext) }}
 
       - uses: ./integration-tests/.github/actions/finish-interop
+        if: always()
         with:
           zallet-app-token: ${{ steps.start-interop.outputs.zallet-app-token }}
           job-name: 'Build zainod on tier ${{ matrix.tier }} platform ${{ matrix.platform }}'
@@ -484,6 +486,7 @@ jobs:
               ${{ format('./zallet/target/{0}/release/zallet{1}', matrix.rust_target, matrix.file_ext) }}
 
       - uses: ./integration-tests/.github/actions/finish-interop
+        if: always()
         with:
           zallet-app-token: ${{ steps.start-interop.outputs.zallet-app-token }}
           job-name: 'Build zallet on tier ${{ matrix.tier }} platform ${{ matrix.platform }}'
@@ -549,6 +552,7 @@ jobs:
           HOST: ${{ matrix.host }}
 
       - uses: ./.github/actions/finish-interop
+        if: always()
         with:
           zallet-app-token: ${{ steps.start-interop.outputs.zallet-app-token }}
           job-name: 'sec-hard tier ${{ matrix.tier }} platform ${{ matrix.platform }}'
@@ -710,6 +714,7 @@ jobs:
           ZCASHD=$(pwd)/${{ format('src/zebrad{0}', matrix.file_ext) }} SRC_DIR=$(pwd) python3 ./subclass.py
 
       - uses: ./.github/actions/finish-interop
+        if: always()
         with:
           zallet-app-token: ${{ steps.start-interop.outputs.zallet-app-token }}
           job-name: 'RPC tests tier ${{ matrix.tier }} platform ${{ matrix.platform }} ${{ matrix.shard }}'
