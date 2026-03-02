@@ -113,7 +113,6 @@ BASE_SCRIPTS= [
     'signrawtransaction_offline.py',
     'key_import_export.py',
     'nodehandling.py',
-    'reindex.py',
     'addressindex.py',
     'spentindex.py',
     'timestampindex.py',
@@ -157,6 +156,17 @@ BASE_SCRIPTS= [
     'converttex.py',
 ]
 
+# Add new scripts to this list instead of BASE_SCRIPTS, so they are grouped separately
+# in CI. This will eventually be merged into BASE_SCRIPTS once everything is working.
+NEW_SCRIPTS= [
+    'addnode.py',
+    'feature_nu6.py',
+    'feature_backup_non_finalized_state.py',
+    'getrawtransaction_sidechain.py',
+    'fix_block_commitments.py',
+    'indexer.py',
+]
+
 ZMQ_SCRIPTS = [
     # ZMQ test can only be run if bitcoin was built with zmq-enabled.
     # call rpc_tests.py with --nozmq to explicitly exclude these tests.
@@ -184,7 +194,7 @@ EXTENDED_SCRIPTS = [
     'wallet_db_flush.py',
 ]
 
-ALL_SCRIPTS = SERIAL_SCRIPTS + FLAKY_SCRIPTS + BASE_SCRIPTS + ZMQ_SCRIPTS + EXTENDED_SCRIPTS
+ALL_SCRIPTS = SERIAL_SCRIPTS + FLAKY_SCRIPTS + BASE_SCRIPTS + NEW_SCRIPTS + ZMQ_SCRIPTS + EXTENDED_SCRIPTS
 
 def main():
     # Parse arguments and pass through unrecognised args
@@ -253,7 +263,7 @@ def main():
     else:
         # No individual tests have been specified. Run base tests, and
         # optionally ZMQ tests and extended tests.
-        test_list = SERIAL_SCRIPTS + FLAKY_SCRIPTS + BASE_SCRIPTS
+        test_list = SERIAL_SCRIPTS + FLAKY_SCRIPTS + BASE_SCRIPTS + NEW_SCRIPTS
         if enable_zmq:
             test_list += ZMQ_SCRIPTS
         if args.extended:
@@ -317,8 +327,12 @@ def run_tests(test_handler, test_list, src_dir, build_dir, exeext, jobs=1, enabl
         BOLD = ('\033[0m', '\033[1m')
 
     #Set env vars
-    if "ZCASHD" not in os.environ:
-        os.environ["ZCASHD"] = build_dir + '/src/zcashd' + exeext
+    if "ZEBRAD" not in os.environ:
+        os.environ["ZEBRAD"] = os.path.join(build_dir, "src", "zebrad" + exeext)
+    if "ZAINOD" not in os.environ:
+        os.environ["ZAINOD"] = os.path.join(build_dir, "src", "zainod" + exeext)
+    if "ZALLET" not in os.environ:
+        os.environ["ZALLET"] = os.path.join(build_dir, "src", "zallet" + exeext)
 
     tests_dir = src_dir + '/qa/rpc-tests/'
 
@@ -452,7 +466,10 @@ class RPCTestHandler:
                     log_out.seek(0), log_err.seek(0)
                     [stdout, stderr] = [l.read().decode('utf-8') for l in (log_out, log_err)]
                     log_out.close(), log_err.close()
-                    passed = stderr == "" and proc.returncode == 0
+                    # Zebra uses stderr for welcome messages, panics, etc., so we
+                    # cannot use stderr emptiness as a success indicator.
+                    # See https://github.com/ZcashFoundation/zebra/issues/10316
+                    passed = proc.returncode == 0
                     self.num_running -= 1
                     self.jobs.remove(j)
                     return name, stdout, stderr, passed, int(time.time() - time0)

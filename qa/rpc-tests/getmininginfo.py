@@ -4,7 +4,6 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import start_nodes
 
 
 class GetMiningInfoTest(BitcoinTestFramework):
@@ -15,12 +14,8 @@ class GetMiningInfoTest(BitcoinTestFramework):
     def __init__(self):
         super().__init__()
         self.num_nodes = 1
+        self.num_wallets = 0
         self.cache_behavior = 'clean'
-
-    def setup_network(self, split=False):
-        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir)
-        self.is_network_split = False
-        self.sync_all()
 
     def run_test(self):
         node = self.nodes[0]

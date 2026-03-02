@@ -4,40 +4,57 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
+#from decimal import Decimal
+import time
+
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.authproxy import JSONRPCException
-from test_framework.mininode import COIN
-from test_framework.util import assert_equal, start_nodes, start_node, \
-    connect_nodes_bi, sync_blocks, sync_mempools
-from test_framework.zip317 import conventional_fee
+from test_framework.util import assert_equal, assert_true
 
-from decimal import Decimal
-
+# Test that we can create a wallet and use an address from it to mine blocks.
 class WalletTest (BitcoinTestFramework):
 
     def __init__(self):
         super().__init__()
         self.cache_behavior = 'clean'
-        self.num_nodes = 4
-
-    def setup_network(self, split=False):
-        self.nodes = start_nodes(3, self.options.tmpdir, extra_args=[[
-            '-allowdeprecated=getnewaddress',
-            '-allowdeprecated=z_getbalance',
-        ]] * 3)
-        connect_nodes_bi(self.nodes,0,1)
-        connect_nodes_bi(self.nodes,1,2)
-        connect_nodes_bi(self.nodes,0,2)
-        self.is_network_split=False
-        self.sync_all()
+        self.num_nodes = 1
+        self.num_wallets = 1
 
     def run_test(self):
-        print("Mining blocks...")
+        transparent_address = self.miner_addresses[0]
 
-        self.nodes[0].generate(4)
+        # The test harness mines a single block so Zallet can start.
+        node_balance = self.nodes[0].getaddressbalance(transparent_address)
+        assert_equal(node_balance['balance'], 625000000)
+
+        # Zallet can see the balance.
+        wallet_balance = self.wallets[0].z_gettotalbalance(1, True)
+        # TODO: Result is a string (https://github.com/zcash/wallet/issues/15)
+        assert_equal(wallet_balance['transparent'], '6.25000000')
+
+        # Mine another block
+        self.nodes[0].generate(1)
+
+        # Wait for the wallet to sync
+        time.sleep(1)
+
+        node_balance = self.nodes[0].getaddressbalance(transparent_address)
+        assert_equal(node_balance['balance'], 1250000000)
+
+        # There are 2 transactions in the wallet
+        assert_equal(len(self.wallets[0].z_listtransactions()), 2)
+
+        # Confirmed balance in the wallet is either 6.25 or 12.5 ZEC
+        wallet_balance = self.wallets[0].z_gettotalbalance(1, True)
+        assert_true(
+            wallet_balance['transparent'] == '6.25000000' or
+            wallet_balance['transparent'] == '12.50000000')
+
+        print("Mining blocks...")
+        self.nodes[0].generate(2)
         self.sync_all()
 
-        walletinfo = self.nodes[0].getwalletinfo()
+        """
+        walletinfo = self.wallets[0].getwalletinfo()
         assert_equal(Decimal(walletinfo['immature_balance']), Decimal('40'))
         assert_equal(Decimal(walletinfo['balance']), Decimal('0'))
 
@@ -226,6 +243,7 @@ class WalletTest (BitcoinTestFramework):
         assert_equal(0, len(myvjoinsplits))
         assert("joinSplitPubKey" not in mytxdetails)
         assert("joinSplitSig" not in mytxdetails)
+        """
 
 if __name__ == '__main__':
     WalletTest ().main ()

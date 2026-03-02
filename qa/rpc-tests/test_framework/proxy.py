@@ -1,4 +1,10 @@
 """
+  Copyright 2024 Zcash Foundation
+
+  ServiceProxy is just AuthServiceProxy without the auth part.
+
+  Previous copyright, from authproxy.py:
+
   Copyright 2011 Jeff Garzik
 
   AuthServiceProxy has the following improvements over python-jsonrpc's
@@ -33,14 +39,13 @@
   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """
 
-import base64
 import decimal
 import json
 import logging
 from http.client import HTTPConnection, HTTPSConnection, BadStatusLine
 from urllib.parse import urlparse
 
-USER_AGENT = "AuthServiceProxy/0.1"
+USER_AGENT = "ServiceProxy/0.1"
 
 HTTP_TIMEOUT = 600
 
@@ -57,24 +62,13 @@ def EncodeDecimal(o):
     raise TypeError(repr(o) + " is not JSON serializable")
 
 
-class AuthServiceProxy():
+class ServiceProxy():
     __id_count = 0
 
     def __init__(self, service_url, service_name=None, timeout=HTTP_TIMEOUT, connection=None):
         self.__service_url = service_url
         self._service_name = service_name
         self.__url =  urlparse(service_url)
-        (user, passwd) = (self.__url.username, self.__url.password)
-        try:
-            user = user.encode('utf8')
-        except AttributeError:
-            pass
-        try:
-            passwd = passwd.encode('utf8')
-        except AttributeError:
-            pass
-        authpair = user + b':' + passwd
-        self.__auth_header = b'Basic ' + base64.b64encode(authpair)
 
         self.timeout = timeout
         self._set_conn(connection)
@@ -95,7 +89,7 @@ class AuthServiceProxy():
             raise AttributeError
         if self._service_name is not None:
             name = "%s.%s" % (self._service_name, name)
-        return AuthServiceProxy(self.__service_url, name, connection=self.__conn)
+        return ServiceProxy(self.__service_url, name, connection=self.__conn)
 
     def _request(self, method, path, postdata):
         '''
@@ -104,7 +98,6 @@ class AuthServiceProxy():
         '''
         headers = {'Host': self.__url.hostname,
                    'User-Agent': USER_AGENT,
-                   'Authorization': self.__auth_header,
                    'Content-type': 'application/json'}
         try:
             self.__conn.request(method, path, postdata, headers)
@@ -124,16 +117,16 @@ class AuthServiceProxy():
                 raise
 
     def __call__(self, *args):
-        AuthServiceProxy.__id_count += 1
+        ServiceProxy.__id_count += 1
 
-        log.debug("-%s-> %s %s"%(AuthServiceProxy.__id_count, self._service_name,
+        log.debug("-%s-> %s %s"%(ServiceProxy.__id_count, self._service_name,
                                  json.dumps(args, default=EncodeDecimal)))
-        postdata = json.dumps({'version': '1.1',
+        postdata = json.dumps({'jsonrpc': '2.0',
                                'method': self._service_name,
                                'params': args,
-                               'id': AuthServiceProxy.__id_count}, default=EncodeDecimal)
+                               'id': ServiceProxy.__id_count}, default=EncodeDecimal)
         response = self._request('POST', self.__url.path, postdata)
-        if response['error'] is not None:
+        if 'error' in response and response['error'] is not None:
             raise JSONRPCException(response['error'])
         elif 'result' not in response:
             raise JSONRPCException({
@@ -153,7 +146,6 @@ class AuthServiceProxy():
                 'code': -342, 'message': 'missing HTTP response from server'})
         
         content_type = http_response.getheader('Content-Type')
-        # Zallet uses 'application/json; charset=utf-8'` while zcashd uses 'application/json'
         if content_type != 'application/json; charset=utf-8':
             raise JSONRPCException({
                 'code': -342, 'message': 'non-JSON HTTP response with \'%i %s\' from server' % (http_response.status, http_response.reason)})
