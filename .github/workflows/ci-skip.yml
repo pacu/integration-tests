@@ -92,15 +92,14 @@ jobs:
 
       - name: Submit required-passed status
         if: ${{ !cancelled() && steps.no-ci-required.outputs.result == 'verified' }}
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
-        with:
-          script: |
-            await github.request("POST /repos/{owner}/{repo}/statuses/{sha}", {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              sha: context.payload.pull_request.head.sha,
-              state: "success",
-              target_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
-              description: "Finished",
-              context: "CI / Required status checks"
-            })
+        shell: sh
+        env:
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+        run: >
+          gh api "repos/${REPO}/statuses/${SHA}"
+          --field state="success"
+          --field target_url="https://github.com/${REPO}/actions/runs/${RUN_ID}"
+          --field description="Finished"
+          --field context="CI / Required status checks"
