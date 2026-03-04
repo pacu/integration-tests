@@ -1116,7 +1116,7 @@ def start_zaino(i, dirname, extra_args=None, rpchost=None, timewait=None, binary
     if binary is None:
         binary = zaino_binary()
     config = update_zainod_conf(datadir, rpc_port(i), indexer_rpc_port(i), zaino_rpc_port(i), zaino_grpc_port(i), extra_args)
-    args = [ binary, "-c="+config ]
+    args = [ binary, "start", "-c="+config ]
 
     zainod_processes[i] = subprocess.Popen(args, stderr=stderr)
     if os.getenv("PYTHON_DEBUG", ""):
