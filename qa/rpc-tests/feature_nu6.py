@@ -82,7 +82,6 @@ class PoolsTest(BitcoinTestFramework):
 
         getblockchaininfo = self.nodes[0].getblockchaininfo()
         value_pools_from_getblockchaininfo = getblockchaininfo['valuePools']
-        (transparent_pool, sapling_pool, sprout_pool, orchard_pool, deferred_pool) = get_value_pools(value_pools_from_getblockchaininfo)
 
         assert_value_pools_equals(value_pools_from_getblock, value_pools_from_getblockchaininfo)
 
@@ -113,7 +112,6 @@ class PoolsTest(BitcoinTestFramework):
 
         getblockchaininfo = self.nodes[0].getblockchaininfo()
         value_pools_from_getblockchaininfo = getblockchaininfo['valuePools']
-        (transparent_pool, sapling_pool, sprout_pool, orchard_pool, deferred_pool) = get_value_pools(value_pools_from_getblockchaininfo)
 
         assert_value_pools_equals(value_pools_from_getblock, value_pools_from_getblockchaininfo)
 
@@ -143,7 +141,6 @@ class PoolsTest(BitcoinTestFramework):
 
         getblockchaininfo = self.nodes[0].getblockchaininfo()
         value_pools_from_getblockchaininfo = getblockchaininfo['valuePools']
-        (transparent_pool, sapling_pool, sprout_pool, orchard_pool, deferred_pool) = get_value_pools(value_pools_from_getblockchaininfo)
 
         assert_value_pools_equals(value_pools_from_getblock, value_pools_from_getblockchaininfo)
 
@@ -222,7 +219,6 @@ class PoolsTest(BitcoinTestFramework):
 
         getblockchaininfo = self.nodes[0].getblockchaininfo()
         value_pools_from_getblockchaininfo = getblockchaininfo['valuePools']
-        (transparent_pool, sapling_pool, sprout_pool, orchard_pool, deferred_pool) = get_value_pools(value_pools_from_getblockchaininfo)
 
         assert_value_pools_equals(value_pools_from_getblock, value_pools_from_getblockchaininfo)
 
@@ -241,7 +237,6 @@ class PoolsTest(BitcoinTestFramework):
 
         getblockchaininfo = self.nodes[0].getblockchaininfo()
         value_pools_from_getblockchaininfo = getblockchaininfo['valuePools']
-        (transparent_pool, sapling_pool, sprout_pool, orchard_pool, deferred_pool) = get_value_pools(value_pools_from_getblockchaininfo)
 
         assert_value_pools_equals(value_pools_from_getblock, value_pools_from_getblockchaininfo)
 
