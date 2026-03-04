@@ -17,7 +17,7 @@ on:
   push:
     branches: main
     # Any update here needs to be done for `pull_request` (see above), and
-    # mirrored into `no-ci.yml`.
+    # mirrored into `ci-skip.yml`.
     paths-ignore:
       # Workflows that have no effect on this workflow.
       - '.github/dependabot.yml'
