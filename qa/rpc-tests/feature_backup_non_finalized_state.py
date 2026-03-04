@@ -36,7 +36,7 @@ class BackupNonFinalized(BitcoinTestFramework):
         blocks = self.nodes[0].getblockchaininfo()['blocks']
         assert_equal(blocks, 10)
 
-        # Generate more blocks and make sure the blockchain is not stall
+        # Generate more blocks and make sure the blockchain is not stalled
         self.nodes[0].generate(1)
         blocks = self.nodes[0].getblockchaininfo()['blocks']
         assert_equal(blocks, 11)
