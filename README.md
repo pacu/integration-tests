@@ -25,9 +25,22 @@ codebase, with the Python test framework (and some of the tests) inherited from
 - Clone the repository.
 - Build `zebrad`, `zainod`, and `zallet` binaries, and place them in a folder
   `./src/` under the repository root.
+
+#### With uv (recommended)
+
+- `uv sync`
+- `uv run ./qa/zcash/full_test_suite.py`
+
+#### Without uv
+
+On Ubuntu or Debian-based distributions:
+- `sudo apt-get install python3-zmq python3-base58 python3-toml`
+- `./qa/zcash/full_test_suite.py`
+
+On macOS or other platforms:
 - `python3 -m venv venv`
 - `. venv/bin/activate`
-- `pip3 install asyncio base58 toml`
+- `pip3 install pyzmq base58 toml`
 - `./qa/zcash/full_test_suite.py`
 
 See [the README for the functional tests][qa/README.md] for additional usage
