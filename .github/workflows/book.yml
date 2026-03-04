@@ -1,9 +1,9 @@
-name: zcashd book
+name: Integration Tests book
 
 on:
   push:
     branches:
-      - master
+      - main
 
 permissions: {}
 jobs:
@@ -26,7 +26,7 @@ jobs:
       - name: Install mdbook-katex
         run: cargo install mdbook-katex
 
-      - name: Build zcashd book
+      - name: Build Integration Tests book
         run: mdbook build doc/book/
 
       - name: Deploy to GitHub Pages

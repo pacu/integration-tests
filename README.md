@@ -1,7 +1,7 @@
 Zcash Integration Tests
-<img align="right" width="120" height="80" src="doc/imgs/logo.png">
 ===========
 
+<!-- ANCHOR: summary -->
 This repository hosts integration tests and associated CI infrastructure for the
 Zcash ecosystem. The following tests are provided:
 
