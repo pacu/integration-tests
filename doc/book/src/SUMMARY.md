@@ -8,3 +8,5 @@
 - [Developer Documentation](dev.md)
   - [Regtest Mode](dev/regtest.md)
   - [Platform Policy](dev/platform-policy.md)
+- [CI Infrastructure](ci/README.md)
+  - [Cross-Repository CI](ci/cross-repo.md)

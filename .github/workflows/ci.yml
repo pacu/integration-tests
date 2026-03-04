@@ -171,10 +171,10 @@ jobs:
 
       - id: notify-interop-error
         uses: ./.github/actions/notify-interop-error
-        if: steps.filter-platforms.outputs.unsupported_platforms != '[]'
+        if: endsWith(github.event.action, '-interop-request') && steps.filter-platforms.outputs.unsupported_platforms != '[]'
         with:
-          zallet-app-id: ${{ secrets.ZALLET_APP_ID }}
-          zallet-app-private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
+          status-app-id: ${{ secrets.STATUS_APP_ID }}
+          status-app-private-key: ${{ secrets.STATUS_APP_PRIVATE_KEY }}
           unsupported-platforms: ${{ steps.filter-platforms.outputs.unsupported_platforms }}
 
       # Configure the build and test matrices. Notes:
@@ -300,8 +300,8 @@ jobs:
       - id: start-interop
         uses: ./integration-tests/.github/actions/start-interop
         with:
-          zallet-app-id: ${{ secrets.ZALLET_APP_ID }}
-          zallet-private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
+          status-app-id: ${{ secrets.STATUS_APP_ID }}
+          status-app-private-key: ${{ secrets.STATUS_APP_PRIVATE_KEY }}
           job-name: "Build zebrad on ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
       - name: Use ZcashFoundation/zebra current main
@@ -367,7 +367,7 @@ jobs:
       - uses: ./integration-tests/.github/actions/finish-interop
         if: always()
         with:
-          zallet-app-token: ${{ steps.start-interop.outputs.zallet-app-token }}
+          app-token: ${{ steps.start-interop.outputs.app-token }}
           job-name: "Build zebrad on ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
   build-zaino:
@@ -394,8 +394,8 @@ jobs:
       - id: start-interop
         uses: ./integration-tests/.github/actions/start-interop
         with:
-          zallet-app-id: ${{ secrets.ZALLET_APP_ID }}
-          zallet-private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
+          status-app-id: ${{ secrets.STATUS_APP_ID }}
+          status-app-private-key: ${{ secrets.STATUS_APP_PRIVATE_KEY }}
           job-name: "Build zainod on ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
       - name: Use zingolabs/zaino current main
@@ -461,7 +461,7 @@ jobs:
       - uses: ./integration-tests/.github/actions/finish-interop
         if: always()
         with:
-          zallet-app-token: ${{ steps.start-interop.outputs.zallet-app-token }}
+          app-token: ${{ steps.start-interop.outputs.app-token }}
           job-name: "Build zainod on ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
   build-zallet:
@@ -488,8 +488,8 @@ jobs:
       - id: start-interop
         uses: ./integration-tests/.github/actions/start-interop
         with:
-          zallet-app-id: ${{ secrets.ZALLET_APP_ID }}
-          zallet-private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
+          status-app-id: ${{ secrets.STATUS_APP_ID }}
+          status-app-private-key: ${{ secrets.STATUS_APP_PRIVATE_KEY }}
           job-name: "Build zallet on ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
       - name: Use specified zcash/wallet commit
@@ -559,7 +559,7 @@ jobs:
       - uses: ./integration-tests/.github/actions/finish-interop
         if: always()
         with:
-          zallet-app-token: ${{ steps.start-interop.outputs.zallet-app-token }}
+          app-token: ${{ steps.start-interop.outputs.app-token }}
           job-name: "Build zallet on ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
   # Not working in Windows
@@ -602,8 +602,8 @@ jobs:
       - id: start-interop
         uses: ./.github/actions/start-interop
         with:
-          zallet-app-id: ${{ secrets.ZALLET_APP_ID }}
-          zallet-private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
+          status-app-id: ${{ secrets.STATUS_APP_ID }}
+          status-app-private-key: ${{ secrets.STATUS_APP_PRIVATE_KEY }}
           job-name: "sec-hard ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
       - name: Download zebrad artifact
@@ -640,7 +640,7 @@ jobs:
       - uses: ./.github/actions/finish-interop
         if: always()
         with:
-          zallet-app-token: ${{ steps.start-interop.outputs.zallet-app-token }}
+          app-token: ${{ steps.start-interop.outputs.app-token }}
           job-name: "sec-hard ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
   rpc-depends:
@@ -715,8 +715,8 @@ jobs:
       - id: start-interop
         uses: ./.github/actions/start-interop
         with:
-          zallet-app-id: ${{ secrets.ZALLET_APP_ID }}
-          zallet-private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
+          status-app-id: ${{ secrets.STATUS_APP_ID }}
+          status-app-private-key: ${{ secrets.STATUS_APP_PRIVATE_KEY }}
           job-name: "RPC tests ${{ matrix.platform }} ${{ matrix.shard }}${{ matrix.required_suffix }}"
 
       - name: Cache Python dependencies for RPC tests
@@ -817,5 +817,5 @@ jobs:
       - uses: ./.github/actions/finish-interop
         if: always()
         with:
-          zallet-app-token: ${{ steps.start-interop.outputs.zallet-app-token }}
+          app-token: ${{ steps.start-interop.outputs.app-token }}
           job-name: "RPC tests ${{ matrix.platform }} ${{ matrix.shard }}${{ matrix.required_suffix }}"
