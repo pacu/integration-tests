@@ -15,7 +15,7 @@ on:
       - '**.md'
       - 'COPYING'
   push:
-    branches: master
+    branches: main
     # Any update here needs to be done for `pull_request` (see above), and
     # mirrored into `no-ci.yml`.
     paths-ignore:
