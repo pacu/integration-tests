@@ -12,3 +12,4 @@ qa/cache/*
 src/*
 
 poetry.lock
+.venv
