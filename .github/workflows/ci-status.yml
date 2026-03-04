@@ -30,9 +30,11 @@ jobs:
             return statuses
 
       - name: Determine whether all required-pass steps succeeded
+        env:
+          STATUSES: ${{ steps.fetch-statuses.outputs.result }}
         # Required-to-pass shards are the ones covering `NEW_SCRIPTS` in `rpc-tests.py`.
         run: |
-          echo '${{ steps.fetch-statuses.outputs.result }}' | jq -e '[ .[] | select(.name | test("(Build .* on tier [12])|(sec-hard tier 1)|(RPC tests tier 1 .* shard-9)")) | .conclusion == "success" ] | all'
+          echo '${STATUSES}' | jq -e '[ .[] | select(.name | test("(Build .* on tier [12])|(sec-hard tier 1)|(RPC tests tier 1 .* shard-9)")) | .conclusion == "success" ] | all'
 
       - name: Submit required-passed status
         if: ${{ !cancelled() }}
