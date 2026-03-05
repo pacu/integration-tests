@@ -125,6 +125,22 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
+      # When triggered by repository_dispatch, callers may specify a subset of
+      # platforms to run via client_payload.platforms (a JSON array of platform
+      # names). When absent, all platforms run. Explicitly requested platforms
+      # are treated as required (run RPC tests, must pass).
+      - id: filter-platforms
+        env:
+          CFG: ${{ toJSON(matrix.cfg) }}
+          REQUESTED_PLATFORMS: ${{ toJSON(github.event.client_payload.platforms) }}
+        run: |
+          if [ "$REQUESTED_PLATFORMS" != "null" ] && [ -n "$REQUESTED_PLATFORMS" ]; then
+            jq -r -n --argjson req "$REQUESTED_PLATFORMS" \
+              'env.CFG | fromjson | .data |= [.[] | select(.name as $n | $req | index($n)) | .required = true] | @json "cfg=\(.)"' >> $GITHUB_OUTPUT
+          else
+            jq -r -n 'env.CFG | fromjson | @json "cfg=\(.)"' >> $GITHUB_OUTPUT
+          fi
+
       # Configure the build and test matrices. Notes:
       # - The `*_names` lists of platforms are combined with job-specific lists to build
       #   strategy matrices. The `*_matrix` lists then augment the matrix with parameters
@@ -135,7 +151,7 @@ jobs:
       # - We only run RPC tests on required platforms, to save costs.
       - id: set-matrices
         env:
-          CFG: ${{ toJSON(matrix.cfg) }}
+          CFG: ${{ steps.filter-platforms.outputs.cfg }}
         run: |
           jq -r -n 'env.CFG | fromjson | @json "build_matrix=\(.data)"' >> $GITHUB_OUTPUT
           jq -r -n 'env.CFG | fromjson | [.data[] | .name] | @json "build_names=\(.)"' >> $GITHUB_OUTPUT
