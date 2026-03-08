@@ -1,4 +1,4 @@
-# Platform Tier Policy
+# Platform Policy
 
 ## General
 

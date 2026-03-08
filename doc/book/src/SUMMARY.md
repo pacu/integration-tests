@@ -15,7 +15,7 @@
   - [DNS Seeders](dev/dnsseed-policy.md)
   - [Rust in `zcashd`](dev/rust.md)
   - [Regtest Tips And Hints](dev/regtest.md)
-  - [Platform Tier Policy](dev/platform-tier-policy.md)
+  - [Platform Policy](dev/platform-policy.md)
   - [Deprecation Procedure](dev/deprecation.md)
 - [Design](design.md)
   - [Chain State](design/chain-state.md)
