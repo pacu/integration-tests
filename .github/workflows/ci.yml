@@ -123,7 +123,22 @@ jobs:
       rpc_test_shards_matrix: ${{ steps.set-rpc-tests.outputs.rpc_test_shards_matrix }}
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Select the test branch
+        id: test-branch
+        if: endsWith(github.event.action, '-interop-request')
+        env:
+          TEST_SHA: ${{ github.event.client_payload.test_sha }}
+        run: |
+          if [ "${TEST_SHA}" != "null" ] && [ -n "${TEST_SHA}" ]; then
+            echo "test_sha=${TEST_SHA}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check out the selected test branch
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          # Empty on direct repo PRs, which selects the default.
+          ref: ${{ steps.test-branch.outputs.test_sha }}
+          persist-credentials: false
 
       # Configure the build and test matrices. Notes:
       # - The `*_names` lists of platforms are combined with job-specific lists to build
@@ -520,7 +535,22 @@ jobs:
         include: ${{ fromJson(needs.setup.outputs.unix_test_matrix) }}
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Select the test branch
+        id: test-branch
+        if: endsWith(github.event.action, '-interop-request')
+        env:
+          TEST_SHA: ${{ github.event.client_payload.test_sha }}
+        run: |
+          if [ "${TEST_SHA}" != "null" ] && [ -n "${TEST_SHA}" ]; then
+            echo "test_sha=${TEST_SHA}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check out the selected test branch
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          # Empty on direct repo PRs, which selects the default.
+          ref: ${{ steps.test-branch.outputs.test_sha }}
+          persist-credentials: false
 
       - id: start-interop
         uses: ./.github/actions/start-interop
@@ -618,7 +648,22 @@ jobs:
         include: ${{ fromJson(needs.setup.outputs.rpc_test_shards_matrix) }}
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Select the test branch
+        id: test-branch
+        if: endsWith(github.event.action, '-interop-request')
+        env:
+          TEST_SHA: ${{ github.event.client_payload.test_sha }}
+        run: |
+          if [ "${TEST_SHA}" != "null" ] && [ -n "${TEST_SHA}" ]; then
+            echo "test_sha=${TEST_SHA}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check out the selected test branch
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          # Empty on direct repo PRs, which selects the default.
+          ref: ${{ steps.test-branch.outputs.test_sha }}
+          persist-credentials: false
 
       - id: start-interop
         uses: ./.github/actions/start-interop
