@@ -1,0 +1,45 @@
+name: "Interop Error Notifier"
+description: "Notifies a partner repository when an invalid interop request is received."
+inputs:
+    zallet-app-id:
+        description: "Zallet GitHub App ID"
+        required: true
+    zallet-app-private-key:
+        description: "Zallet GitHub App private key"
+        required: true
+    unsupported-platforms:
+        description: "Invalid platform identifiers."
+        required: true
+outputs:
+    zallet-app-token:
+        description: "Access token for updating the Zallet pending status"
+        value: ${{ steps.zallet-app-token.outputs.token }}
+runs:
+    using: "composite"
+    steps:
+        - name: Generate zcash/wallet app token for error reporting
+          if: github.event.action == 'zallet-interop-request'
+          id: zallet-app-token
+          uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+          with:
+              app-id: ${{ inputs.zallet-app-id }}
+              private-key: ${{ inputs.zallet-app-private-key }}
+              owner: zcash
+              repositories: wallet
+
+        # Report error statuses for requested platforms that are not supported.
+        - name: Report unsupported platforms
+          if: github.event.action == 'zallet-interop-request'
+          shell: bash
+          env:
+              GH_TOKEN: ${{ steps.zallet-app-token.outputs.token }}
+              SHA: ${{ github.event.client_payload.sha }}
+              UNSUPPORTED: ${{ inputs.unsupported-platforms }}
+          run: |
+            echo "$UNSUPPORTED" | jq -r '.[]' | while read -r platform; do
+              gh api "repos/zcash/wallet/statuses/${SHA}" \
+                --field state=error \
+                --field target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+                --field description="Platform not supported by this repository" \
+                --field context="Integration tests / Unsupported platform: ${platform}"
+            done

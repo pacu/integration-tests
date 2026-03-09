@@ -154,31 +154,13 @@ jobs:
               | @json "cfg=\(.)"' >> $GITHUB_OUTPUT
           fi
 
-      # Report error statuses for requested platforms that are not supported.
-      - name: Generate app token for error reporting
-        if: github.event.action == 'zallet-interop-request' && steps.filter-platforms.outputs.unsupported_platforms != '[]'
-        id: error-report-token
-        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+      - id: notify-interop-error
+        uses: ./.github/actions/notify-interop-error
+        if: steps.filter-platforms.outputs.unsupported_platforms != '[]'
         with:
-          app-id: ${{ secrets.ZALLET_APP_ID }}
-          private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
-          owner: zcash
-          repositories: wallet
-
-      - name: Report unsupported platforms
-        if: github.event.action == 'zallet-interop-request' && steps.filter-platforms.outputs.unsupported_platforms != '[]'
-        env:
-          GH_TOKEN: ${{ steps.error-report-token.outputs.token }}
-          SHA: ${{ github.event.client_payload.sha }}
-          UNSUPPORTED: ${{ steps.filter-platforms.outputs.unsupported_platforms }}
-        run: |
-          echo "$UNSUPPORTED" | jq -r '.[]' | while read -r platform; do
-            gh api "repos/zcash/wallet/statuses/${SHA}" \
-              --field state=error \
-              --field target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
-              --field description="Platform not supported by this repository" \
-              --field context="Integration tests / Unsupported platform: ${platform}"
-          done
+          zallet-app-id: ${{ secrets.ZALLET_APP_ID }}
+          zallet-app-private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
+          unsupported-platforms: ${{ steps.filter-platforms.outputs.unsupported_platforms }}
 
       # Configure the build and test matrices. Notes:
       # - The `*_names` lists of platforms are combined with job-specific lists to build
@@ -203,7 +185,7 @@ jobs:
 
       - id: set-rpc-tests
         env:
-          IS_INTEROP_REQUEST: ${{ github.event.action == 'zallet-interop-request' }}
+          IS_INTEROP_REQUEST: ${{ endsWith(github.event.action, '-interop-request') }}
         run: |
           cat <<EOF > ./subclass.py
           import importlib
