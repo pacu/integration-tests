@@ -6,8 +6,8 @@ governed by the [Platform Policy](../dev/platform-policy.md).
 Tested platforms can be thought of as "guaranteed to work". Automated testing ensures that
 each tested platform builds and passes tests after each change to the upstream binaries.
 
-The following table contains the set of tested platforms that binary providers can make
-use of as part of their own testing workflows.
+The following table contains the set of testing platform configurations that binary providers can make
+use of as part of their own workflows.
 
 "End of Support" dates are the latest currently-known date after which the platform will
 be removed. These dates are subject to change.

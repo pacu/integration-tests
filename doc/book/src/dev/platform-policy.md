@@ -2,6 +2,9 @@
 
 ## General
 
+A testing platform configuration (or "tested platform") is a combination of a Rust target
+and an operating environment (such as a specific operating system version).
+
 The continuous integration checks in this repository ensure that tested platforms will
 always build and pass tests. These platforms place work on Zcash developers as a whole, to
 avoid breaking the platform. The broader Zcash community may also feel more inclined to
