@@ -135,11 +135,50 @@ jobs:
           REQUESTED_PLATFORMS: ${{ toJSON(github.event.client_payload.platforms) }}
         run: |
           if [ "$REQUESTED_PLATFORMS" != "null" ] && [ -n "$REQUESTED_PLATFORMS" ]; then
+            # Identify requested platforms not present in the configuration.
             jq -r -n --argjson req "$REQUESTED_PLATFORMS" \
-              'env.CFG | fromjson | .data |= [.[] | select(.name as $n | $req | index($n)) | .required = true] | @json "cfg=\(.)"' >> $GITHUB_OUTPUT
+              'env.CFG | fromjson | .data | [.[].name] as $known
+              | [$req[] | select(. as $n | $known | index($n) | not)]
+              | @json "unsupported_platforms=\(.)"' >> $GITHUB_OUTPUT
+            # Filter to requested platforms, mark as required, and add suffix.
+            jq -r -n --argjson req "$REQUESTED_PLATFORMS" '
+              env.CFG | fromjson
+              | .data |= [.[] | select(.name as $n | $req | index($n))
+                | .required = true | .required_suffix = " (required)"]
+              | @json "cfg=\(.)"' >> $GITHUB_OUTPUT
           else
-            jq -r -n 'env.CFG | fromjson | @json "cfg=\(.)"' >> $GITHUB_OUTPUT
+            # Add required_suffix based on the existing required flag.
+            jq -r -n '
+              env.CFG | fromjson
+              | .data |= [.[] | .required_suffix = if .required then " (required)" else "" end]
+              | @json "cfg=\(.)"' >> $GITHUB_OUTPUT
           fi
+
+      # Report error statuses for requested platforms that are not supported.
+      - name: Generate app token for error reporting
+        if: github.event.action == 'zallet-interop-request' && steps.filter-platforms.outputs.unsupported_platforms != '[]'
+        id: error-report-token
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+        with:
+          app-id: ${{ secrets.ZALLET_APP_ID }}
+          private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
+          owner: zcash
+          repositories: wallet
+
+      - name: Report unsupported platforms
+        if: github.event.action == 'zallet-interop-request' && steps.filter-platforms.outputs.unsupported_platforms != '[]'
+        env:
+          GH_TOKEN: ${{ steps.error-report-token.outputs.token }}
+          SHA: ${{ github.event.client_payload.sha }}
+          UNSUPPORTED: ${{ steps.filter-platforms.outputs.unsupported_platforms }}
+        run: |
+          echo "$UNSUPPORTED" | jq -r '.[]' | while read -r platform; do
+            gh api "repos/zcash/wallet/statuses/${SHA}" \
+              --field state=error \
+              --field target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+              --field description="Platform not supported by this repository" \
+              --field context="Integration tests / Unsupported platform: ${platform}"
+          done
 
       # Configure the build and test matrices. Notes:
       # - The `*_names` lists of platforms are combined with job-specific lists to build
@@ -241,7 +280,7 @@ jobs:
           curl -L -C - https://download.z.cash/downloads/sprout-groth16.params -o zcash-params/sprout-groth16.params
 
   build-zebra:
-    name: Build zebrad on ${{ matrix.platform }}${{ matrix.required && ' (required)' || '' }}
+    name: Build zebrad on ${{ matrix.platform }}${{ matrix.required_suffix }}
     needs: setup
     runs-on: ${{ matrix.build_os }}
     container:
@@ -266,7 +305,7 @@ jobs:
         with:
           zallet-app-id: ${{ secrets.ZALLET_APP_ID }}
           zallet-private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
-          job-name: "Build zebrad on ${{ matrix.platform }}${{ matrix.required && ' (required)' || '' }}"
+          job-name: "Build zebrad on ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
       - name: Use ZcashFoundation/zebra current main
         run: echo "ZEBRA_REF=refs/heads/main" >> $GITHUB_ENV
@@ -332,10 +371,10 @@ jobs:
         if: always()
         with:
           zallet-app-token: ${{ steps.start-interop.outputs.zallet-app-token }}
-          job-name: "Build zebrad on ${{ matrix.platform }}${{ matrix.required && ' (required)' || '' }}"
+          job-name: "Build zebrad on ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
   build-zaino:
-    name: Build zainod on ${{ matrix.platform }}${{ matrix.required && ' (required)' || '' }}
+    name: Build zainod on ${{ matrix.platform }}${{ matrix.required_suffix }}
     needs: setup
     runs-on: ${{ matrix.build_os }}
     container:
@@ -360,7 +399,7 @@ jobs:
         with:
           zallet-app-id: ${{ secrets.ZALLET_APP_ID }}
           zallet-private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
-          job-name: "Build zainod on ${{ matrix.platform }}${{ matrix.required && ' (required)' || '' }}"
+          job-name: "Build zainod on ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
       - name: Use zingolabs/zaino current main
         run: echo "ZAINO_REF=refs/heads/dev" >> $GITHUB_ENV
@@ -426,10 +465,10 @@ jobs:
         if: always()
         with:
           zallet-app-token: ${{ steps.start-interop.outputs.zallet-app-token }}
-          job-name: "Build zainod on ${{ matrix.platform }}${{ matrix.required && ' (required)' || '' }}"
+          job-name: "Build zainod on ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
   build-zallet:
-    name: Build zallet on ${{ matrix.platform }}${{ matrix.required && ' (required)' || '' }}
+    name: Build zallet on ${{ matrix.platform }}${{ matrix.required_suffix }}
     needs: setup
     runs-on: ${{ matrix.build_os }}
     container:
@@ -454,7 +493,7 @@ jobs:
         with:
           zallet-app-id: ${{ secrets.ZALLET_APP_ID }}
           zallet-private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
-          job-name: "Build zallet on ${{ matrix.platform }}${{ matrix.required && ' (required)' || '' }}"
+          job-name: "Build zallet on ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
       - name: Use specified zcash/wallet commit
         if: github.event.action == 'zallet-interop-request'
@@ -524,11 +563,11 @@ jobs:
         if: always()
         with:
           zallet-app-token: ${{ steps.start-interop.outputs.zallet-app-token }}
-          job-name: "Build zallet on ${{ matrix.platform }}${{ matrix.required && ' (required)' || '' }}"
+          job-name: "Build zallet on ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
   # Not working in Windows
   sec-hard:
-    name: sec-hard ${{ matrix.platform }}${{ matrix.required && ' (required)' || '' }}
+    name: sec-hard ${{ matrix.platform }}${{ matrix.required_suffix }}
     needs:
       - setup
       - build-zebra
@@ -553,7 +592,7 @@ jobs:
         with:
           zallet-app-id: ${{ secrets.ZALLET_APP_ID }}
           zallet-private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
-          job-name: "sec-hard ${{ matrix.platform }}${{ matrix.required && ' (required)' || '' }}"
+          job-name: "sec-hard ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
       - name: Download zebrad artifact
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
@@ -590,10 +629,10 @@ jobs:
         if: always()
         with:
           zallet-app-token: ${{ steps.start-interop.outputs.zallet-app-token }}
-          job-name: "sec-hard ${{ matrix.platform }}${{ matrix.required && ' (required)' || '' }}"
+          job-name: "sec-hard ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
   rpc-depends:
-    name: RPC set up ${{ matrix.platform }}${{ matrix.required && ' (required)' || '' }}
+    name: RPC set up ${{ matrix.platform }}${{ matrix.required_suffix }}
     needs: setup
     runs-on: ${{ matrix.test_os }}
     container:
@@ -622,7 +661,7 @@ jobs:
           pip install zmq asyncio base58 toml
 
   test-rpc:
-    name: RPC tests ${{ matrix.platform }} ${{ matrix.shard }}${{ matrix.required && ' (required)' || '' }}
+    name: RPC tests ${{ matrix.platform }} ${{ matrix.shard }}${{ matrix.required_suffix }}
     needs:
       - setup
       - build-zebra
@@ -651,7 +690,7 @@ jobs:
         with:
           zallet-app-id: ${{ secrets.ZALLET_APP_ID }}
           zallet-private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
-          job-name: "RPC tests ${{ matrix.platform }} ${{ matrix.shard }}${{ matrix.required && ' (required)' || '' }}"
+          job-name: "RPC tests ${{ matrix.platform }} ${{ matrix.shard }}${{ matrix.required_suffix }}"
 
       - name: Cache Python dependencies for RPC tests
         uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
@@ -752,4 +791,4 @@ jobs:
         if: always()
         with:
           zallet-app-token: ${{ steps.start-interop.outputs.zallet-app-token }}
-          job-name: "RPC tests ${{ matrix.platform }} ${{ matrix.shard }}${{ matrix.required && ' (required)' || '' }}"
+          job-name: "RPC tests ${{ matrix.platform }} ${{ matrix.shard }}${{ matrix.required_suffix }}"
