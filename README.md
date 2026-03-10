@@ -17,6 +17,7 @@ codebase, with the Python test framework (and some of the tests) inherited from
 [`zallet`]: https://github.com/zcash/wallet
 [`zcashd`]: https://github.com/zcash/zcash
 [Bitcoin Core]: https://github.com/bitcoin/bitcoin
+<!-- ANCHOR_END: summary -->
 
 ## Getting Started
 
