@@ -72,7 +72,7 @@ def create_coinbase(height, pubkey=None, after_blossom=False, outputs=[], lockbo
     coinbaseoutput.nValue = int(12.5*100000000)
     if after_blossom:
         coinbaseoutput.nValue //= BLOSSOM_POW_TARGET_SPACING_RATIO
-    halvings = height // 150 # regtest
+    halvings = height // 144 # regtest
     coinbaseoutput.nValue >>= halvings
     coinbaseoutput.nValue -= lockboxvalue
 

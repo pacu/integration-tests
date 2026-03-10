@@ -1,7 +1,7 @@
 Zcash Integration Tests
-<img align="right" width="120" height="80" src="doc/imgs/logo.png">
 ===========
 
+<!-- ANCHOR: summary -->
 This repository hosts integration tests and associated CI infrastructure for the
 Zcash ecosystem. The following tests are provided:
 
@@ -17,6 +17,7 @@ codebase, with the Python test framework (and some of the tests) inherited from
 [`zallet`]: https://github.com/zcash/wallet
 [`zcashd`]: https://github.com/zcash/zcash
 [Bitcoin Core]: https://github.com/bitcoin/bitcoin
+<!-- ANCHOR_END: summary -->
 
 ## Getting Started
 
