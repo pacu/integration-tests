@@ -44,7 +44,6 @@ FLAKY_SCRIPTS = [
 BASE_SCRIPTS= [
     # Longest test should go first, to favor running tests in parallel
     # vv Tests less than 5m vv
-    'wallet.py',
     'sprout_sapling_migration.py',
     'remove_sprout_shielding.py',
     # vv Tests less than 2m vv
@@ -116,12 +115,10 @@ BASE_SCRIPTS= [
     'addressindex.py',
     'spentindex.py',
     'timestampindex.py',
-    'decodescript.py',
     'blockchain.py',
     'disablewallet.py',
     'keypool.py',
     'getblocktemplate.py',
-    'getmininginfo.py',
     'bip65-cltv-p2p.py',
     'bipdersig-p2p.py',
     'invalidblockrequest.py',
@@ -137,12 +134,10 @@ BASE_SCRIPTS= [
     'coinbase_funding_streams.py',
     'framework.py',
     'sapling_rewind_check.py',
-    'feature_nu6_1.py',
     'feature_zip221.py',
     'feature_zip239.py',
     'feature_zip244_blockcommitments.py',
     'upgrade_golden.py',
-    'nuparams.py',
     'post_heartwood_rollback.py',
     'feature_logging.py',
     'feature_walletfile.py',
@@ -159,12 +154,22 @@ BASE_SCRIPTS= [
 # Add new scripts to this list instead of BASE_SCRIPTS, so they are grouped separately
 # in CI. This will eventually be merged into BASE_SCRIPTS once everything is working.
 NEW_SCRIPTS= [
+    # Longest test should go first, to favor running tests in parallel
+    # vv Tests less than 5m vv
+    'wallet.py',
+    # vv Tests less than 2m vv
+    # vv Tests less than 60s vv
     'addnode.py',
+    # vv Tests less than 30s vv
     'feature_nu6.py',
     'feature_backup_non_finalized_state.py',
     'getrawtransaction_sidechain.py',
     'fix_block_commitments.py',
     'indexer.py',
+    'decodescript.py',
+    'feature_nu6_1.py',
+    'nuparams.py',
+    'getmininginfo.py',
 ]
 
 ZMQ_SCRIPTS = [
