@@ -43,7 +43,7 @@ jobs:
         cfg:
           - data:
             # - name: Debian-bookworm
-            #   tier: 1
+            #   required: true
             #   platform: Debian Bookworm
             #   build_os: ${{ vars.UBUNTU_22_04_LARGE_RUNNER || 'ubuntu-22.04' }}
             #   test_os: ubuntu-22.04
@@ -52,7 +52,7 @@ jobs:
             #   rust_target: x86_64-unknown-linux-gnu
 
             # - name: Debian-bullseye
-            #   tier: 1
+            #   required: true
             #   platform: Debian bullseye
             #   build_os: ${{ vars.UBUNTU_22_04_LARGE_RUNNER || 'ubuntu-22.04' }}
             #   test_os: ubuntu-22.04
@@ -61,7 +61,7 @@ jobs:
             #   rust_target: x86_64-unknown-linux-gnu
 
             - name: ubuntu-22.04
-              tier: 1
+              required: true
               platform: Ubuntu 22.04
               build_os: ${{ vars.UBUNTU_22_04_LARGE_RUNNER || 'ubuntu-22.04' }}
               test_os: ubuntu-22.04
@@ -69,7 +69,7 @@ jobs:
               rust_target: x86_64-unknown-linux-gnu
 
             - name: ubuntu-24.04
-              tier: 3
+              required: false
               platform: Ubuntu 24.04
               build_os: ubuntu-24.04
               test_os: ubuntu-24.04
@@ -77,7 +77,7 @@ jobs:
               rust_target: x86_64-unknown-linux-gnu
 
             # - name: macos-12
-            #   tier: 3
+            #   required: false
             #   platform: macOS 12 Monterey
             #   build_os: macos-12
             #   test_os: macos-12
@@ -91,7 +91,7 @@ jobs:
             #   rust_target: x86_64-apple-darwin
 
             - name: mingw32
-              tier: 3
+              required: false
               platform: Windows (64-bit MinGW)
               build_os: ${{ vars.UBUNTU_22_04_LARGE_RUNNER || 'ubuntu-22.04' }}
               test_os: windows-latest
@@ -102,7 +102,7 @@ jobs:
               file_ext: ".exe"
 
             - name: aarch64-linux
-              tier: 3
+              required: false
               platform: ARM64 Linux
               build_os: ${{ vars.UBUNTU_22_04_LARGE_RUNNER || 'ubuntu-22.04' }}
               cross_deps: >
@@ -140,6 +140,43 @@ jobs:
           ref: ${{ steps.test-branch.outputs.test_sha }}
           persist-credentials: false
 
+      # When triggered by repository_dispatch, callers may specify a subset of
+      # platforms to run via client_payload.platforms (a JSON array of platform
+      # names). When absent, all platforms run. Explicitly requested platforms
+      # are treated as required (run RPC tests, must pass).
+      - id: filter-platforms
+        env:
+          CFG: ${{ toJSON(matrix.cfg) }}
+          REQUESTED_PLATFORMS: ${{ toJSON(github.event.client_payload.platforms) }}
+        run: |
+          if [ "$REQUESTED_PLATFORMS" != "null" ] && [ -n "$REQUESTED_PLATFORMS" ]; then
+            # Identify requested platforms not present in the configuration.
+            jq -r -n --argjson req "$REQUESTED_PLATFORMS" \
+              'env.CFG | fromjson | .data | [.[].name] as $known
+              | [$req[] | select(. as $n | $known | index($n) | not)]
+              | @json "unsupported_platforms=\(.)"' >> $GITHUB_OUTPUT
+            # Filter to requested platforms, mark as required, and add suffix.
+            jq -r -n --argjson req "$REQUESTED_PLATFORMS" '
+              env.CFG | fromjson
+              | .data |= [.[] | select(.name as $n | $req | index($n))
+                | .required = true | .required_suffix = " (required)"]
+              | @json "cfg=\(.)"' >> $GITHUB_OUTPUT
+          else
+            # Add required_suffix based on the existing required flag.
+            jq -r -n '
+              env.CFG | fromjson
+              | .data |= [.[] | .required_suffix = if .required then " (required)" else "" end]
+              | @json "cfg=\(.)"' >> $GITHUB_OUTPUT
+          fi
+
+      - id: notify-interop-error
+        uses: ./.github/actions/notify-interop-error
+        if: steps.filter-platforms.outputs.unsupported_platforms != '[]'
+        with:
+          zallet-app-id: ${{ secrets.ZALLET_APP_ID }}
+          zallet-app-private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
+          unsupported-platforms: ${{ steps.filter-platforms.outputs.unsupported_platforms }}
+
       # Configure the build and test matrices. Notes:
       # - The `*_names` lists of platforms are combined with job-specific lists to build
       #   strategy matrices. The `*_matrix` lists then augment the matrix with parameters
@@ -147,10 +184,10 @@ jobs:
       # - We can only run tests on the subset of platforms that have a compatible runner
       #   (i.e. excluding cross-compiled platforms).
       # - Some tests don't currently work on Windows platforms, so we have a Unix subset.
-      # - We only run RPC tests on Tier 1 platforms, to save costs.
+      # - We only run RPC tests on required platforms, to save costs.
       - id: set-matrices
         env:
-          CFG: ${{ toJSON(matrix.cfg) }}
+          CFG: ${{ steps.filter-platforms.outputs.cfg }}
         run: |
           jq -r -n 'env.CFG | fromjson | @json "build_matrix=\(.data)"' >> $GITHUB_OUTPUT
           jq -r -n 'env.CFG | fromjson | [.data[] | .name] | @json "build_names=\(.)"' >> $GITHUB_OUTPUT
@@ -158,10 +195,12 @@ jobs:
           jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os) | .name] | @json "test_names=\(.)"' >> $GITHUB_OUTPUT
           jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os and .test_os != "windows-latest")] | @json "unix_test_matrix=\(.)"' >> $GITHUB_OUTPUT
           jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os and .test_os != "windows-latest") | .name] | @json "unix_test_names=\(.)"' >> $GITHUB_OUTPUT
-          jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os and .tier == 1)] | @json "rpc_test_matrix=\(.)"' >> $GITHUB_OUTPUT
-          jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os and .tier == 1) | .name] | @json "rpc_test_names=\(.)"' >> $GITHUB_OUTPUT
+          jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os and .required)] | @json "rpc_test_matrix=\(.)"' >> $GITHUB_OUTPUT
+          jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os and .required) | .name] | @json "rpc_test_names=\(.)"' >> $GITHUB_OUTPUT
 
       - id: set-rpc-tests
+        env:
+          IS_INTEROP_REQUEST: ${{ endsWith(github.event.action, '-interop-request') }}
         run: |
           cat <<EOF > ./subclass.py
           import importlib
@@ -173,21 +212,28 @@ jobs:
           rpc_tests = importlib.import_module('rpc-tests')
 
           src_dir = os.environ["SRC_DIR"]
+          is_interop_request = os.environ["IS_INTEROP_REQUEST"] == "true"
           SHARDS = 10
 
-          # While we are getting the existing tests to pass, ensure that new tests
-          # are in separate shards from existing tests (so we can keep them passing).
-          num_old_tests = len(rpc_tests.BASE_SCRIPTS + rpc_tests.ZMQ_SCRIPTS)
-          num_new_tests = len(rpc_tests.NEW_SCRIPTS)
-          old_shards = (num_old_tests * SHARDS) // (num_old_tests + num_new_tests)
+          # While we are getting the existing tests to pass, skip tests that are
+          # not expected to pass; this makes it easier to distinguish expected
+          # failures from unexpected ones.
+          if is_interop_request:
+              old_shards = 0
+          else:
+              num_old_tests = len(rpc_tests.BASE_SCRIPTS + rpc_tests.ZMQ_SCRIPTS)
+              num_new_tests = len(rpc_tests.NEW_SCRIPTS)
+              old_shards = (num_old_tests * SHARDS) // (num_old_tests + num_new_tests)
+
           new_shards = SHARDS - old_shards
 
           # These tests are ordered longest-test-first, to favor running tests in
           # parallel with the regular test runner. For chunking purposes, assign
           # tests to shards in round-robin order.
           test_shards = {}
-          for i, test in enumerate(rpc_tests.BASE_SCRIPTS + rpc_tests.ZMQ_SCRIPTS):
-              test_shards.setdefault(i % old_shards, []).append(test)
+          if old_shards > 0:
+              for i, test in enumerate(rpc_tests.BASE_SCRIPTS + rpc_tests.ZMQ_SCRIPTS):
+                  test_shards.setdefault(i % old_shards, []).append(test)
           for i, test in enumerate(rpc_tests.NEW_SCRIPTS):
               test_shards.setdefault(old_shards + (i % new_shards), []).append(test)
 
@@ -201,11 +247,12 @@ jobs:
           # These tests involve enough shielded spends (consuming all CPU cores)
           # that we can't run them in parallel, or fail intermittently so we run
           # them separately to enable not requiring that they pass.
-          for test in rpc_tests.SERIAL_SCRIPTS + rpc_tests.FLAKY_SCRIPTS:
-              test_list.append({
-                  'shard': test,
-                  'rpc_tests': [test],
-              })
+          if not is_interop_request:
+              for test in rpc_tests.SERIAL_SCRIPTS + rpc_tests.FLAKY_SCRIPTS:
+                  test_list.append({
+                      'shard': test,
+                      'rpc_tests': [test],
+                  })
 
           print(json.dumps(test_list))
           EOF
@@ -230,7 +277,7 @@ jobs:
           curl -L -C - https://download.z.cash/downloads/sprout-groth16.params -o zcash-params/sprout-groth16.params
 
   build-zebra:
-    name: Build zebrad on tier ${{ matrix.tier }} platform ${{ matrix.platform }}
+    name: Build zebrad on ${{ matrix.platform }}${{ matrix.required_suffix }}
     needs: setup
     runs-on: ${{ matrix.build_os }}
     container:
@@ -238,7 +285,7 @@ jobs:
       env:
         HOME: /root
         PATH: /root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
-    continue-on-error: ${{ matrix.tier == 3 }}
+    continue-on-error: ${{ !matrix.required }}
     strategy:
       matrix:
         include: ${{ fromJson(needs.setup.outputs.build_matrix) }}
@@ -255,7 +302,7 @@ jobs:
         with:
           zallet-app-id: ${{ secrets.ZALLET_APP_ID }}
           zallet-private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
-          job-name: 'Build zebrad on tier ${{ matrix.tier }} platform ${{ matrix.platform }}'
+          job-name: "Build zebrad on ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
       - name: Use ZcashFoundation/zebra current main
         run: echo "ZEBRA_REF=refs/heads/main" >> $GITHUB_ENV
@@ -321,10 +368,10 @@ jobs:
         if: always()
         with:
           zallet-app-token: ${{ steps.start-interop.outputs.zallet-app-token }}
-          job-name: 'Build zebrad on tier ${{ matrix.tier }} platform ${{ matrix.platform }}'
+          job-name: "Build zebrad on ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
   build-zaino:
-    name: Build zainod on tier ${{ matrix.tier }} platform ${{ matrix.platform }}
+    name: Build zainod on ${{ matrix.platform }}${{ matrix.required_suffix }}
     needs: setup
     runs-on: ${{ matrix.build_os }}
     container:
@@ -332,7 +379,7 @@ jobs:
       env:
         HOME: /root
         PATH: /root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
-    continue-on-error: ${{ matrix.tier == 3 }}
+    continue-on-error: ${{ !matrix.required }}
     strategy:
       matrix:
         include: ${{ fromJson(needs.setup.outputs.build_matrix) }}
@@ -349,7 +396,7 @@ jobs:
         with:
           zallet-app-id: ${{ secrets.ZALLET_APP_ID }}
           zallet-private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
-          job-name: 'Build zainod on tier ${{ matrix.tier }} platform ${{ matrix.platform }}'
+          job-name: "Build zainod on ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
       - name: Use zingolabs/zaino current main
         run: echo "ZAINO_REF=refs/heads/dev" >> $GITHUB_ENV
@@ -415,10 +462,10 @@ jobs:
         if: always()
         with:
           zallet-app-token: ${{ steps.start-interop.outputs.zallet-app-token }}
-          job-name: 'Build zainod on tier ${{ matrix.tier }} platform ${{ matrix.platform }}'
+          job-name: "Build zainod on ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
   build-zallet:
-    name: Build zallet on tier ${{ matrix.tier }} platform ${{ matrix.platform }}
+    name: Build zallet on ${{ matrix.platform }}${{ matrix.required_suffix }}
     needs: setup
     runs-on: ${{ matrix.build_os }}
     container:
@@ -426,7 +473,7 @@ jobs:
       env:
         HOME: /root
         PATH: /root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
-    continue-on-error: ${{ matrix.tier == 3 }}
+    continue-on-error: ${{ !matrix.required }}
     strategy:
       matrix:
         include: ${{ fromJson(needs.setup.outputs.build_matrix) }}
@@ -443,7 +490,7 @@ jobs:
         with:
           zallet-app-id: ${{ secrets.ZALLET_APP_ID }}
           zallet-private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
-          job-name: 'Build zallet on tier ${{ matrix.tier }} platform ${{ matrix.platform }}'
+          job-name: "Build zallet on ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
       - name: Use specified zcash/wallet commit
         if: github.event.action == 'zallet-interop-request'
@@ -513,11 +560,11 @@ jobs:
         if: always()
         with:
           zallet-app-token: ${{ steps.start-interop.outputs.zallet-app-token }}
-          job-name: 'Build zallet on tier ${{ matrix.tier }} platform ${{ matrix.platform }}'
+          job-name: "Build zallet on ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
   # Not working in Windows
   sec-hard:
-    name: sec-hard tier ${{ matrix.tier }} platform ${{ matrix.platform }}
+    name: sec-hard ${{ matrix.platform }}${{ matrix.required_suffix }}
     needs:
       - setup
       - build-zebra
@@ -529,7 +576,7 @@ jobs:
       env:
         HOME: /root
         PATH: /root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
-    continue-on-error: ${{ matrix.tier != 1 }}
+    continue-on-error: ${{ !matrix.required }}
     strategy:
       matrix:
         include: ${{ fromJson(needs.setup.outputs.unix_test_matrix) }}
@@ -557,7 +604,7 @@ jobs:
         with:
           zallet-app-id: ${{ secrets.ZALLET_APP_ID }}
           zallet-private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
-          job-name: 'sec-hard tier ${{ matrix.tier }} platform ${{ matrix.platform }}'
+          job-name: "sec-hard ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
       - name: Download zebrad artifact
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
@@ -594,10 +641,10 @@ jobs:
         if: always()
         with:
           zallet-app-token: ${{ steps.start-interop.outputs.zallet-app-token }}
-          job-name: 'sec-hard tier ${{ matrix.tier }} platform ${{ matrix.platform }}'
+          job-name: "sec-hard ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
   rpc-depends:
-    name: RPC set up tier ${{ matrix.tier }} platform ${{ matrix.platform }}
+    name: RPC set up ${{ matrix.platform }}${{ matrix.required_suffix }}
     needs: setup
     runs-on: ${{ matrix.test_os }}
     container:
@@ -605,7 +652,7 @@ jobs:
       env:
         HOME: /root
         PATH: /root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
-    continue-on-error: ${{ matrix.tier != 1 }}
+    continue-on-error: ${{ !matrix.required }}
     strategy:
       matrix:
         name: ${{ fromJson(needs.setup.outputs.rpc_test_names) }}
@@ -626,7 +673,7 @@ jobs:
           pip install zmq asyncio base58 toml
 
   test-rpc:
-    name: RPC tests tier ${{ matrix.tier }} platform ${{ matrix.platform }} ${{ matrix.shard }}
+    name: RPC tests ${{ matrix.platform }} ${{ matrix.shard }}${{ matrix.required_suffix }}
     needs:
       - setup
       - build-zebra
@@ -639,7 +686,7 @@ jobs:
       env:
         HOME: /root
         PATH: /root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
-    continue-on-error: ${{ matrix.tier != 1 }}
+    continue-on-error: ${{ !matrix.required }}
     strategy:
       fail-fast: false
       matrix:
@@ -670,7 +717,7 @@ jobs:
         with:
           zallet-app-id: ${{ secrets.ZALLET_APP_ID }}
           zallet-private-key: ${{ secrets.ZALLET_APP_PRIVATE_KEY }}
-          job-name: 'RPC tests tier ${{ matrix.tier }} platform ${{ matrix.platform }} ${{ matrix.shard }}'
+          job-name: "RPC tests ${{ matrix.platform }} ${{ matrix.shard }}${{ matrix.required_suffix }}"
 
       - name: Cache Python dependencies for RPC tests
         uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
@@ -771,4 +818,4 @@ jobs:
         if: always()
         with:
           zallet-app-token: ${{ steps.start-interop.outputs.zallet-app-token }}
-          job-name: 'RPC tests tier ${{ matrix.tier }} platform ${{ matrix.platform }} ${{ matrix.shard }}'
+          job-name: "RPC tests ${{ matrix.platform }} ${{ matrix.shard }}${{ matrix.required_suffix }}"
