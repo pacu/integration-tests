@@ -169,12 +169,18 @@ jobs:
               | @json "cfg=\(.)"' >> $GITHUB_OUTPUT
           fi
 
+      - name: Compute interop repo ids
+        id: repo-ids
+        uses: ./.github/actions/interop-repo-ids
+
       - id: notify-interop-error
         uses: ./.github/actions/notify-interop-error
         if: endsWith(github.event.action, '-interop-request') && steps.filter-platforms.outputs.unsupported_platforms != '[]'
         with:
           status-app-id: ${{ secrets.STATUS_APP_ID }}
           status-app-private-key: ${{ secrets.STATUS_APP_PRIVATE_KEY }}
+          requesting-owner: ${{ steps.repo-ids.outputs.requesting-owner }}
+          requesting-repository: ${{ steps.repo-ids.outputs.requesting-repository }}
           unsupported-platforms: ${{ steps.filter-platforms.outputs.unsupported_platforms }}
 
       # Configure the build and test matrices. Notes:
@@ -297,11 +303,17 @@ jobs:
           path: integration-tests
           persist-credentials: false
 
+      - name: Compute interop repo ids
+        id: repo-ids
+        uses: ./integration-tests/.github/actions/interop-repo-ids
+
       - id: start-interop
         uses: ./integration-tests/.github/actions/start-interop
         with:
           status-app-id: ${{ secrets.STATUS_APP_ID }}
           status-app-private-key: ${{ secrets.STATUS_APP_PRIVATE_KEY }}
+          requesting-owner: ${{ steps.repo-ids.outputs.requesting-owner }}
+          requesting-repository: ${{ steps.repo-ids.outputs.requesting-repository }}
           job-name: "Build zebrad on ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
       - name: Use ZcashFoundation/zebra current main
@@ -368,6 +380,8 @@ jobs:
         if: always()
         with:
           app-token: ${{ steps.start-interop.outputs.app-token }}
+          requesting-owner: ${{ steps.repo-ids.outputs.requesting-owner }}
+          requesting-repository: ${{ steps.repo-ids.outputs.requesting-repository }}
           job-name: "Build zebrad on ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
   build-zaino:
@@ -391,11 +405,17 @@ jobs:
           path: integration-tests
           persist-credentials: false
 
+      - name: Compute interop repo ids
+        id: repo-ids
+        uses: ./integration-tests/.github/actions/interop-repo-ids
+
       - id: start-interop
         uses: ./integration-tests/.github/actions/start-interop
         with:
           status-app-id: ${{ secrets.STATUS_APP_ID }}
           status-app-private-key: ${{ secrets.STATUS_APP_PRIVATE_KEY }}
+          requesting-owner: ${{ steps.repo-ids.outputs.requesting-owner }}
+          requesting-repository: ${{ steps.repo-ids.outputs.requesting-repository }}
           job-name: "Build zainod on ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
       - name: Use zingolabs/zaino current main
@@ -462,6 +482,8 @@ jobs:
         if: always()
         with:
           app-token: ${{ steps.start-interop.outputs.app-token }}
+          requesting-owner: ${{ steps.repo-ids.outputs.requesting-owner }}
+          requesting-repository: ${{ steps.repo-ids.outputs.requesting-repository }}
           job-name: "Build zainod on ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
   build-zallet:
@@ -485,11 +507,17 @@ jobs:
           path: integration-tests
           persist-credentials: false
 
+      - name: Compute interop repo ids
+        id: repo-ids
+        uses: ./integration-tests/.github/actions/interop-repo-ids
+
       - id: start-interop
         uses: ./integration-tests/.github/actions/start-interop
         with:
           status-app-id: ${{ secrets.STATUS_APP_ID }}
           status-app-private-key: ${{ secrets.STATUS_APP_PRIVATE_KEY }}
+          requesting-owner: ${{ steps.repo-ids.outputs.requesting-owner }}
+          requesting-repository: ${{ steps.repo-ids.outputs.requesting-repository }}
           job-name: "Build zallet on ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
       - name: Use specified zcash/wallet commit
@@ -560,6 +588,8 @@ jobs:
         if: always()
         with:
           app-token: ${{ steps.start-interop.outputs.app-token }}
+          requesting-owner: ${{ steps.repo-ids.outputs.requesting-owner }}
+          requesting-repository: ${{ steps.repo-ids.outputs.requesting-repository }}
           job-name: "Build zallet on ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
   # Not working in Windows
@@ -599,11 +629,17 @@ jobs:
           ref: ${{ steps.test-branch.outputs.test_sha }}
           persist-credentials: false
 
+      - name: Compute interop repo ids
+        id: repo-ids
+        uses: ./integration-tests/.github/actions/interop-repo-ids
+
       - id: start-interop
         uses: ./.github/actions/start-interop
         with:
           status-app-id: ${{ secrets.STATUS_APP_ID }}
           status-app-private-key: ${{ secrets.STATUS_APP_PRIVATE_KEY }}
+          requesting-owner: ${{ steps.repo-ids.outputs.requesting-owner }}
+          requesting-repository: ${{ steps.repo-ids.outputs.requesting-repository }}
           job-name: "sec-hard ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
       - name: Download zebrad artifact
@@ -641,6 +677,8 @@ jobs:
         if: always()
         with:
           app-token: ${{ steps.start-interop.outputs.app-token }}
+          requesting-owner: ${{ steps.repo-ids.outputs.requesting-owner }}
+          requesting-repository: ${{ steps.repo-ids.outputs.requesting-repository }}
           job-name: "sec-hard ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
   rpc-depends:
@@ -712,11 +750,17 @@ jobs:
           ref: ${{ steps.test-branch.outputs.test_sha }}
           persist-credentials: false
 
+      - name: Compute interop repo ids
+        id: repo-ids
+        uses: ./integration-tests/.github/actions/interop-repo-ids
+
       - id: start-interop
         uses: ./.github/actions/start-interop
         with:
           status-app-id: ${{ secrets.STATUS_APP_ID }}
           status-app-private-key: ${{ secrets.STATUS_APP_PRIVATE_KEY }}
+          requesting-owner: ${{ steps.repo-ids.outputs.requesting-owner }}
+          requesting-repository: ${{ steps.repo-ids.outputs.requesting-repository }}
           job-name: "RPC tests ${{ matrix.platform }} ${{ matrix.shard }}${{ matrix.required_suffix }}"
 
       - name: Cache Python dependencies for RPC tests
@@ -818,4 +862,6 @@ jobs:
         if: always()
         with:
           app-token: ${{ steps.start-interop.outputs.app-token }}
+          requesting-owner: ${{ steps.repo-ids.outputs.requesting-owner }}
+          requesting-repository: ${{ steps.repo-ids.outputs.requesting-repository }}
           job-name: "RPC tests ${{ matrix.platform }} ${{ matrix.shard }}${{ matrix.required_suffix }}"
