@@ -1,8 +1,8 @@
 name: 'Finish interop'
 description: 'Updates status with CI result'
 inputs:
-  zallet-app-token:
-    description: 'Access token for updating the Zallet pending status'
+  app-token:
+    description: 'Access token for updating the pending status'
     required: true
   job-name:
     description: 'Name of the job to report to the requesting repository'
@@ -10,15 +10,22 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Update zcash/wallet status with result
-      if: always() && github.event.action == 'zallet-interop-request'
+    - name: Compute interop repo ids
+      if: always() && endsWith(github.event.action, '-interop-request')
+      id: repo-ids
+      uses: ./.github/actions/interop-repo-ids
+
+    - name: Update status with result
+      if: always() && endsWith(github.event.action, '-interop-request')
       shell: sh
       env:
-        GH_TOKEN: ${{ inputs.zallet-app-token }}
+        GH_TOKEN: ${{ inputs.app-token }}
         SHA: ${{ github.event.client_payload.sha }}
         JOB_NAME: ${{ inputs.job-name }}
+        OWNER: ${{ steps.repo-ids.outputs.requesting-owner }}
+        REPOSITORY: ${{ steps.repo-ids.outputs.requesting-repository }}
       run: >
-        gh api "repos/zcash/wallet/statuses/${SHA}"
+        gh api "repos/${OWNER}/${REPOSITORY}/statuses/${SHA}"
         --field state="${{ case(job.status == 'cancelled', 'error', job.status) }}"
         --field target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         --field description="Finished"

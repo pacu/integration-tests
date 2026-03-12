@@ -58,6 +58,13 @@ information.
   test as appropriate).
 - Open a pull request with your changes.
 
+## Cross-Repository CI Integration
+
+This repository supports triggering integration tests from PRs in external
+repositories (including those in other GitHub organizations) and reporting
+results back as status checks. See [doc/cross-repo-ci.md](doc/book/ci/cross-repo.md)
+for setup instructions.
+
 Participation in the Zcash project is subject to a
 [Code of Conduct](code_of_conduct.md).
 

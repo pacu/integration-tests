@@ -1,0 +1,32 @@
+name: 'Interop repo ids'
+description: 'Compute interop repo ids from github.event.action'
+outputs:
+  requesting-owner:
+    value: ${{ steps.repo-ids.outputs.requesting-owner }}
+  requesting-repository:
+    value: ${{ steps.repo-ids.outputs.requesting-repository }}
+runs:
+  using: 'composite'
+  steps:
+    - name: compute repo ids
+      id: repo-ids
+      if: endsWith(github.event.action, '-interop-request')
+      shell: sh
+      env:
+        REQUESTING_OWNER: |-
+          ${{ case(
+            github.event.action == 'zallet-interop-request', 'zcash',
+            github.event.action == 'zebra-interop-request', 'ZcashFoundation',
+            github.event.action == 'zaino-interop-request', 'zingolabs',
+            null
+          ) }}
+        REQUESTING_REPO: |-
+          ${{ case(
+            github.event.action == 'zallet-interop-request', 'wallet',
+            github.event.action == 'zebra-interop-request', 'zebra',
+            github.event.action == 'zaino-interop-request', 'zaino',
+            null
+          ) }}
+      run: |
+        echo "requesting-owner=${REQUESTING_OWNER}" >> $GITHUB_OUTPUT
+        echo "requesting-repository=${REQUESTING_REPO}" >> $GITHUB_OUTPUT
