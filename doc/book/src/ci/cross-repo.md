@@ -31,7 +31,7 @@ communication:
   `integration-tests` CI to write status checks back to the requesting
   repository's PR.
 
-[`z3-integration-status-reporting`]: https://github.com/organizations/zcash/settings/apps/z3-integration-status-reporting
+[`z3-integration-status-reporting`]: https://github.com/apps/z3-integration-status-reporting/installations/new
 
 This two-app model follows the principle of least privilege: each app only has
 the permissions and credentials for the direction it serves, limiting the blast
