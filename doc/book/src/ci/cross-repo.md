@@ -77,12 +77,15 @@ It may also include these optional fields:
 
 - **`platforms`**: A JSON array of platform names (e.g. `["ubuntu-22.04",
   "mingw32"]`) to run only a subset of platforms. Requested platforms are treated
-  as required (must pass). Unrecognized platform names are reported as error
+  as required (must pass). The valid list of platform names is maintained
+  [here](platform-support). Unrecognized platform names are reported as error
   statuses on the requesting PR. When omitted, all platforms run.
-- **`test_sha`**: A commit SHA or ref in the `integration-tests` repository
+- **`test_sha`**: A commit SHA or ref in the `zcash/integration-tests` repository
   itself. When provided, the test suite is checked out at this ref instead of
   `main`. This is useful for testing integration-tests changes alongside project
   changes.
+
+[platform-support]: https://zcash.github.io/integration-tests/user/platform-support.html
 
 ### Integration-tests repository side
 

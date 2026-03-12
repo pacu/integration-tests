@@ -11,7 +11,7 @@ runs:
   using: 'composite'
   steps:
     - name: Compute interop repo ids
-      if: endsWith(github.event.action, '-interop-request')
+      if: always() && endsWith(github.event.action, '-interop-request')
       id: repo-ids
       uses: ./.github/actions/interop-repo-ids
 

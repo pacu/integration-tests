@@ -10,10 +10,6 @@ inputs:
     unsupported-platforms:
         description: "Invalid platform identifiers."
         required: true
-outputs:
-    app-token:
-        description: "Access token for updating the pending status"
-        value: ${{ steps.app-token.outputs.token }}
 runs:
     using: "composite"
     steps:
