@@ -7,17 +7,18 @@ inputs:
   status-app-private-key:
     description: "Status-reporting GitHub App private key"
     required: true
+  requesting-owner:
+    description: "Owner of repository containing the event SHA"
+    required: true
+  requesting-repository:
+    description: "Repository containing the event SHA"
+    required: true
   unsupported-platforms:
     description: "Invalid platform identifiers."
     required: true
 runs:
   using: "composite"
   steps:
-    - name: Compute interop repo ids
-      if: endsWith(github.event.action, '-interop-request')
-      id: repo-ids
-      uses: ./.github/actions/interop-repo-ids
-
     - name: Generate app token for error reporting
       if: endsWith(github.event.action, '-interop-request')
       id: app-token
@@ -25,18 +26,18 @@ runs:
       with:
         app-id: ${{ inputs.status-app-id }}
         private-key: ${{ inputs.status-app-private-key }}
-        owner: ${{ steps.repo-ids.outputs.requesting-owner }}
-        repositories: ${{ steps.repo-ids.outputs.requesting-repository }}
+        owner: ${{ inputs.requesting-owner }}
+        repositories: ${{ inputs.requesting-repository }}
 
     - name: Report unsupported platforms
       if: endsWith(github.event.action, '-interop-request')
       shell: bash
       env:
         GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        OWNER: ${{ inputs.requesting-owner }}
+        REPOSITORY: ${{ inputs.requesting-repository }}
         SHA: ${{ github.event.client_payload.sha }}
         UNSUPPORTED: ${{ inputs.unsupported-platforms }}
-        OWNER: ${{ steps.repo-ids.outputs.requesting-owner }}
-        REPOSITORY: ${{ steps.repo-ids.outputs.requesting-repository }}
       run: |
         echo "$UNSUPPORTED" | jq -r '.[]' | while read -r platform; do
           gh api "repos/${OWNER}/${REPOSITORY}/statuses/${SHA}" \
