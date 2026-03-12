@@ -1,47 +1,47 @@
 name: "Interop Error Notifier"
 description: "Notifies a partner repository when an invalid interop request is received."
 inputs:
-    status-app-id:
-        description: "Status-reporting GitHub App ID"
-        required: true
-    status-app-private-key:
-        description: "Status-reporting GitHub App private key"
-        required: true
-    unsupported-platforms:
-        description: "Invalid platform identifiers."
-        required: true
+  status-app-id:
+    description: "Status-reporting GitHub App ID"
+    required: true
+  status-app-private-key:
+    description: "Status-reporting GitHub App private key"
+    required: true
+  unsupported-platforms:
+    description: "Invalid platform identifiers."
+    required: true
 runs:
-    using: "composite"
-    steps:
-        - name: Compute interop repo ids
-          if: endsWith(github.event.action, '-interop-request')
-          id: repo-ids
-          uses: ./.github/actions/interop-repo-ids
+  using: "composite"
+  steps:
+    - name: Compute interop repo ids
+      if: endsWith(github.event.action, '-interop-request')
+      id: repo-ids
+      uses: ./.github/actions/interop-repo-ids
 
-        - name: Generate app token for error reporting
-          if: endsWith(github.event.action, '-interop-request')
-          id: app-token
-          uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
-          with:
-              app-id: ${{ inputs.status-app-id }}
-              private-key: ${{ inputs.status-app-private-key }}
-              owner: ${{ steps.repo-ids.outputs.requesting-owner }}
-              repositories: ${{ steps.repo-ids.outputs.requesting-repository }}
+    - name: Generate app token for error reporting
+      if: endsWith(github.event.action, '-interop-request')
+      id: app-token
+      uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+      with:
+        app-id: ${{ inputs.status-app-id }}
+        private-key: ${{ inputs.status-app-private-key }}
+        owner: ${{ steps.repo-ids.outputs.requesting-owner }}
+        repositories: ${{ steps.repo-ids.outputs.requesting-repository }}
 
-        - name: Report unsupported platforms
-          if: endsWith(github.event.action, '-interop-request')
-          shell: bash
-          env:
-              GH_TOKEN: ${{ steps.app-token.outputs.token }}
-              SHA: ${{ github.event.client_payload.sha }}
-              UNSUPPORTED: ${{ inputs.unsupported-platforms }}
-              OWNER: ${{ steps.repo-ids.outputs.requesting-owner }}
-              REPOSITORY: ${{ steps.repo-ids.outputs.requesting-repository }}
-          run: |
-            echo "$UNSUPPORTED" | jq -r '.[]' | while read -r platform; do
-              gh api "repos/${OWNER}/${REPOSITORY}/statuses/${SHA}" \
-                --field state=error \
-                --field target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
-                --field description="Platform not supported by this repository" \
-                --field context="Integration tests / Unsupported platform: ${platform}"
-            done
+    - name: Report unsupported platforms
+      if: endsWith(github.event.action, '-interop-request')
+      shell: bash
+      env:
+        GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        SHA: ${{ github.event.client_payload.sha }}
+        UNSUPPORTED: ${{ inputs.unsupported-platforms }}
+        OWNER: ${{ steps.repo-ids.outputs.requesting-owner }}
+        REPOSITORY: ${{ steps.repo-ids.outputs.requesting-repository }}
+      run: |
+        echo "$UNSUPPORTED" | jq -r '.[]' | while read -r platform; do
+          gh api "repos/${OWNER}/${REPOSITORY}/statuses/${SHA}" \
+            --field state=error \
+            --field target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --field description="Platform not supported by this repository" \
+            --field context="Integration tests / Unsupported platform: ${platform}"
+        done
