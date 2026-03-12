@@ -31,6 +31,7 @@ on:
   repository_dispatch:
     types:
       - zebra-interop-request
+      - zaino-interop-request
       - zallet-interop-request
 
 permissions:
@@ -324,6 +325,7 @@ jobs:
         env:
           SHA: ${{ github.event.client_payload.sha }}
         run: echo "ZEBRA_REF=${SHA}" >> $GITHUB_ENV
+
       - name: Use ZcashFoundation/zebra current main
         if: github.event.action != 'zebra-interop-request'
         run: echo "ZEBRA_REF=refs/heads/main" >> $GITHUB_ENV
@@ -427,7 +429,15 @@ jobs:
           requesting-repository: ${{ steps.repo-ids.outputs.requesting-repository }}
           job-name: "Build zainod on ${{ matrix.platform }}${{ matrix.required_suffix }}"
 
-      - name: Use zingolabs/zaino current main
+      - name: Use specified zingolabs/zaino commit
+        if: github.event.action == 'zaino-interop-request'
+        shell: sh
+        env:
+          SHA: ${{ github.event.client_payload.sha }}
+        run: echo "ZAINO_REF=${SHA}" >> $GITHUB_ENV
+
+      - name: Use zingolabs/zaino current dev
+        if: github.event.action != 'zaino-interop-request'
         run: echo "ZAINO_REF=refs/heads/dev" >> $GITHUB_ENV
 
       - name: Check out zingolabs/zaino
