@@ -653,7 +653,7 @@ jobs:
 
       - name: Compute interop repo ids
         id: repo-ids
-        uses: ./integration-tests/.github/actions/interop-repo-ids
+        uses: ./.github/actions/interop-repo-ids
 
       - id: start-interop
         uses: ./.github/actions/start-interop
@@ -774,7 +774,7 @@ jobs:
 
       - name: Compute interop repo ids
         id: repo-ids
-        uses: ./integration-tests/.github/actions/interop-repo-ids
+        uses: ./.github/actions/interop-repo-ids
 
       - id: start-interop
         uses: ./.github/actions/start-interop
