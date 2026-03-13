@@ -6,9 +6,8 @@ integrated repository, that repository dispatches an event here, which runs the
 full integration test suite using the PR's commit. Results are reported back as
 status checks on the originating PR.
 
-This is currently set up for [`zallet`] (`zcash/wallet`) and can be extended to
-repositories in other organizations, such as [`zebrad`]
-(`ZcashFoundation/zebra`) and [`zainod`] (`zingolabs/zaino`).
+Integration testing is currently set up for the [`zallet`], [`zebrad`], and
+[`zaino`] repositories.
 
 [`repository_dispatch`]: https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#repository_dispatch
 [`zallet`]: https://github.com/zcash/wallet
@@ -31,13 +30,13 @@ communication:
   `integration-tests` CI to write status checks back to the requesting
   repository's PR.
 
-[`z3-integration-status-reporting`]: https://github.com/apps/z3-integration-status-reporting/installations/new
+[`z3-integration-status-reporting`]: https://github.com/apps/z3-integration-status-reporting
 
 This two-app model follows the principle of least privilege: each app only has
 the permissions and credentials for the direction it serves, limiting the blast
 radius if either app's credentials are compromised.
 
-### Requesting repository side
+### Requesting repository setup
 
 The requesting repository's CI workflow includes a job that dispatches to this
 repository:
@@ -87,19 +86,23 @@ It may also include these optional fields:
 
 [platform-support]: https://zcash.github.io/integration-tests/user/platform-support.html
 
-### Integration-tests repository side
+### Integration-tests repository setup
 
-On this side, three things are configured:
+In the integration-tests repository CI, three things are configured:
 
 1. **`ci.yml` trigger**: The workflow's `on.repository_dispatch.types` array
-   includes the event type (e.g. `zebra-interop-request`).
+   includes the event type (`zebra-interop-request`, `zallet-interop-request`,
+   and `zaino-interop-request` are currently supported).
 
 2. **Build job**: A build job checks out the requesting repository at the
    dispatched commit SHA:
    ```yaml
    - name: Use specified commit
      if: github.event.action == '<project>-interop-request'
-     run: echo "PROJECT_REF=${{ github.event.client_payload.sha }}" >> $GITHUB_ENV
+     env:
+       SHA: ${{ github.event.client_payload.sha }}
+     run: echo "PROJECT_REF=${SHA}" >> $GITHUB_ENV
+
    - name: Use current main
      if: github.event.action != '<project>-interop-request'
      run: echo "PROJECT_REF=refs/heads/main" >> $GITHUB_ENV
@@ -111,8 +114,8 @@ On this side, three things are configured:
      the requesting repository's owner and name. This mapping is maintained as
      a `case` expression so that only known event types resolve to valid
      repositories.
-   - `start-interop` calls `interop-repo-ids`, generates a token from the
-     `z3-integration-status-reporting` app scoped to the requesting repository,
+   - `start-interop` generates a token from the
+     `z3-integration-status-reporting` app scoped to the requesting repository
      and creates a **pending** status check on the dispatched commit.
    - `finish-interop` (run with `if: always()`) updates that status to the
      job's final result (success, failure, or error).
@@ -120,8 +123,8 @@ On this side, three things are configured:
      that are not recognized by the CI matrix (see `platforms` in
      [client_payload](#requesting-repository-side)).
 
-   Each job that should report status back must call `start-interop` at the
-   beginning and `finish-interop` at the end.
+   Each job calls `interop-repo-ids` first, then passes its outputs to
+   `start-interop` at the beginning and `finish-interop` at the end.
 
 ## Security model
 
@@ -141,8 +144,9 @@ this:
 **Credential separation**: Each app's private key is stored only where it is
 needed — the dispatch app's key in the requesting repository, the
 `z3-integration-status-reporting` key (a single key pair, since it is one app)
-in `zcash/integration-tests`. If a dispatch app's credentials are compromised, an attacker could trigger
-integration test runs but could not write arbitrary statuses. If the
+in `zcash/integration-tests`. If a dispatch app's credentials are compromised,
+an attacker could trigger integration test runs but could not write arbitrary
+statuses. If the
 status-reporting credentials are compromised, an attacker could write status
 checks to repositories where the app is installed but could not trigger workflow
 runs.
@@ -164,85 +168,35 @@ instructions below use Zebra (`ZcashFoundation/zebra`) as a running example.
 The requesting repository needs a dispatch app installed on
 `zcash/integration-tests`.
 
-**For `zallet`**: Use the existing [`zallet-integration-dispatch`] app. Store
-its ID and private key as repository secrets in the requesting repository (e.g.
-as `DISPATCH_APP_ID` and `DISPATCH_APP_PRIVATE_KEY`).
-
-**For external organizations**: The requesting organization creates its own
-GitHub App with:
+The requesting organization creates a GitHub App with:
 
 - **Repository permissions**: `Contents`: Read and write
 
 Then have a `zcash` org admin install it on `zcash/integration-tests`. Store the
 app's ID and private key as repository secrets in the requesting repository
-(e.g. as `DISPATCH_APP_ID` and `DISPATCH_APP_PRIVATE_KEY`).
+(as `DISPATCH_APP_ID` and `DISPATCH_APP_PRIVATE_KEY`) so that they can be used
+for CI configuration as described in the next step.
 
-### 2. Install `z3-integration-status-reporting` on the requesting repository
+### 2. Update the requesting repository's CI
+
+Add a `trigger-integration` job to the requesting repository's CI workflow (see
+the [example above](#requesting-repository-side)). Use the event type
+`<project>-interop-request` appropriate to the requesting repository where
+`<project>` is one of `zallet`, `zebra`, or `zaino`.
+
+### 3. Install `z3-integration-status-reporting` on the requesting repository
 
 The [`z3-integration-status-reporting`] app must be installed on the requesting
-repository so that `integration-tests` can write status checks back.
+repository so that `integration-tests` can write status updates back to the
+PR or workflow run that triggered the test.
 
-If the app is not yet public, a `zcash` org admin must first make it public via
-the [app settings page][`z3-integration-status-reporting`] → **Advanced** →
-**Make public** (under **Danger zone**). Note that once a public app is installed
-on other accounts, it cannot be made private again. This is safe: the app only
-allows `zcash` to write statuses *to* repos that choose to install it.
-
-Then have an admin of the requesting organization install it via:
-
-```
+An admin of the requesting organization can install the app via
 https://github.com/apps/z3-integration-status-reporting/installations/new
-```
 
 During installation, select only the specific repository that needs integration
 (e.g. `zebra`).
 
-### 3. Update the requesting repository's CI
-
-Add a `trigger-integration` job to the requesting repository's CI workflow (see
-the [example above](#requesting-repository-side)). Use the event type
-`<project>-interop-request` (e.g. `zebra-interop-request`).
-
-### 4. Update `integration-tests`
-
-#### a. Add the event type to `ci.yml`
-
-```yaml
-repository_dispatch:
-  types: [zallet-interop-request, zebra-interop-request]
-```
-
-#### b. Add or update the build job
-
-Add conditional ref selection so the build job checks out either the dispatched
-commit (for interop requests) or the default branch (for local CI runs). See the
-`build-zallet` job in `ci.yml` for a complete example.
-
-#### c. Add the event type to `interop-repo-ids`
-
-The `interop-repo-ids` action in `.github/actions/` maps event types to
-repository coordinates. Add the new project's event type, owner, and repository
-name to the `case` expressions in `interop-repo-ids/action.yml`. For example,
-for Zebra:
-
-```yaml
-github.event.action == 'zebra-interop-request', 'ZcashFoundation',
-```
-
-The `start-interop`, `finish-interop`, and `notify-interop-error` actions call
-`interop-repo-ids` to determine where to report statuses, so no changes to those
-actions are needed.
-
-Each job that should report status back must call `start-interop` at the
-beginning and `finish-interop` (with `if: always()`) at the end.
-
-#### d. Add secrets
-
-Store the `z3-integration-status-reporting` app's ID and private key as
-repository secrets in `zcash/integration-tests` (as `STATUS_APP_ID` and
-`STATUS_APP_PRIVATE_KEY`).
-
-### 5. Verify
+### 4. Verify
 
 Open a test PR in the requesting repository and confirm that:
 - The `trigger-integration` job dispatches successfully.
