@@ -81,7 +81,7 @@ class NuparamsTest(BitcoinTestFramework):
         assert_equal(nu6['status'], 'pending')
 
         # Initial subsidy at the genesis block is 12.5 ZEC
-        assert_equal(node.getblocksubsidy()["miner"], Decimal("12.5"))
+        assert_equal(node.getblocksubsidy()["totalblocksubsidy"], Decimal("12.5"))
 
         # Zebra regtest mode hardcodes Canopy, Heartwood, Blossom, Sapling and Overwinter
         # to activate at height 1.
@@ -130,7 +130,7 @@ class NuparamsTest(BitcoinTestFramework):
         # The founders' reward ends at Canopy and there are no funding streams
         # configured by default for regtest. On mainnet, the halving activated
         # coincident with Canopy, but on regtest the two are independent.
-        assert_equal(node.getblocksubsidy()["miner"], Decimal("6.25"))
+        assert_equal(node.getblocksubsidy()["totalblocksubsidy"], Decimal("6.25"))
 
         # Activate NU5
         node.generate(6)
@@ -174,7 +174,7 @@ class NuparamsTest(BitcoinTestFramework):
         assert_equal(nu6['status'], 'pending')
 
         # Block subsidy remains the same after NU5
-        assert_equal(node.getblocksubsidy()["miner"], Decimal("6.25"))
+        assert_equal(node.getblocksubsidy()["totalblocksubsidy"], Decimal("6.25"))
 
         # Activate NU6
         node.generate(2)
@@ -218,7 +218,7 @@ class NuparamsTest(BitcoinTestFramework):
         assert_equal(nu6['status'], 'active')
 
         # Block subsidy remains the same after NU6
-        assert_equal(node.getblocksubsidy()["miner"], Decimal("6.25"))
+        assert_equal(node.getblocksubsidy()["totalblocksubsidy"], Decimal("6.25"))
 
 if __name__ == '__main__':
     NuparamsTest().main()
