@@ -28,6 +28,7 @@ runs:
         private-key: ${{ inputs.status-app-private-key }}
         owner: ${{ inputs.requesting-owner }}
         repositories: ${{ inputs.requesting-repository }}
+        permission-statuses: write
 
     - name: Report unsupported platforms
       if: endsWith(github.event.action, '-interop-request')

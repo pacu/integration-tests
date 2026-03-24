@@ -32,6 +32,7 @@ runs:
         private-key: ${{ inputs.status-app-private-key }}
         owner: ${{ inputs.requesting-owner }}
         repositories: ${{ inputs.requesting-repository }}
+        permission-statuses: write
 
     - name: Create pending status
       if: endsWith(github.event.action, '-interop-request')
