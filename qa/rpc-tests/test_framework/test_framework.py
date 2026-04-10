@@ -32,10 +32,12 @@ from .util import (
     stop_wallets,
     stop_zainos,
     stop_lightwalletds,
+    stop_zcashd_nodes,
     wait_bitcoinds,
     wait_zainods,
     wait_zallets,
     wait_lightwalletds,
+    wait_zcashd_nodes,
     enable_coverage,
     check_json_precision,
     PortSeed,
@@ -49,11 +51,13 @@ class BitcoinTestFramework(object):
         self.num_indexers = 0
         self.num_lightwalletds = 0
         self.num_wallets = 4
+        self.num_zcashd_nodes = 0
         self.cache_behavior = 'current'
         self.nodes = None
         self.zainos = None
         self.lwds = None
         self.wallets = None
+        self.zcashd_nodes = None
         self.miner_addresses = None
 
     def run_test(self):
@@ -236,14 +240,18 @@ class BitcoinTestFramework(object):
             wait_lightwalletds()
 
             print("Stopping indexers")
-            stop_zainos(self.zainos)
+            stop_zainos(self.zainos or [])
             wait_zainods()
+
+            print("Stopping zcashd nodes")
+            stop_zcashd_nodes(self.zcashd_nodes or [])
+            wait_zcashd_nodes()
 
             print("Stopping nodes")
             stop_nodes(self.nodes)
             wait_bitcoinds()
         else:
-            print("Note: zebrads, zainods, lightwalletds, and zallets were not stopped and may still be running")
+            print("Note: zebrads, zainods, lightwalletds, zallets, and zcashd nodes were not stopped and may still be running")
 
         if not self.options.nocleanup and not self.options.noshutdown:
             print("Cleaning up")
