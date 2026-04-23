@@ -149,8 +149,8 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "base58" },
-    { name = "grpcio" },
-    { name = "protobuf" },
+    { name = "grpcio", specifier = ">=1.80.0" },
+    { name = "protobuf", specifier = ">=6.31.1" },
     { name = "pyzmq" },
     { name = "toml" },
 ]
